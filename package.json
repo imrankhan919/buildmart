@@ -1,0 +1,27 @@
+{
+  "name": "buildmart",
+  "version": "1.0.0",
+  "description": "🏗️ BuildMart — House Raw Material Marketplace",
+  "homepage": "https://github.com/imrankhan919/buildmart#readme",
+  "bugs": {
+    "url": "https://github.com/imrankhan919/buildmart/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imrankhan919/buildmart.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "server": "node server/server.js",
+    "dev": "node --watch server/server.js"
+  },
+  "dependencies": {
+    "colors": "^1.4.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.5.0"
+  }
+}
