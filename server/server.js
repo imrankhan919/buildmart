@@ -11,6 +11,10 @@ import authRoutes from "./routes/authRoutes.js"
 const PORT = process.env.PORT || 5000
 const app = express()
 
+// Body Parser
+app.use(express.json())
+app.use(express.urlencoded())
+
 
 // DB Connection
 connectDB()

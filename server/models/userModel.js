@@ -18,8 +18,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-        unique: [true, "Please Enter Password"]
+        required: [true, "Please Enter Password"],
     },
     isVendor: {
         type: Boolean,
