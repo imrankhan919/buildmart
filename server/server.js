@@ -6,6 +6,7 @@ dotenv.config()
 
 // Local Imports
 import authRoutes from "./routes/authRoutes.js"
+import errorHandler from "./middleware/errorHandler.js"
 
 
 const PORT = process.env.PORT || 5000
@@ -30,6 +31,10 @@ app.get("/", (req, res) => {
 
 // Auth Routes
 app.use("/api/auth", authRoutes)
+
+
+// Error Handler
+app.use(errorHandler)
 
 
 app.listen(PORT, () => {
