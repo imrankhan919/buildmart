@@ -6,6 +6,7 @@ dotenv.config()
 
 // Local Imports
 import authRoutes from "./routes/authRoutes.js"
+import adminRoutes from "./routes/adminRoutes.js"
 import errorHandler from "./middleware/errorHandler.js"
 
 
@@ -31,6 +32,10 @@ app.get("/", (req, res) => {
 
 // Auth Routes
 app.use("/api/auth", authRoutes)
+
+// Admin Routes
+app.use("/api/admin", adminRoutes)
+
 
 
 // Error Handler
