@@ -1,4 +1,5 @@
 import User from "../models/userModel.js"
+import Vendor from "../models/vendorModel.js"
 
 const getAllUsers = async (req, res) => {
     const users = await User.find()
@@ -16,11 +17,54 @@ const updateUser = async (req, res) => {
 }
 
 const getAllVendors = async (req, res) => {
-    res.send("Get All Vendors")
+
+    const vendors = await Vendor.find()
+
+    if (!vendors) {
+        res.status(404)
+        throw new Error("Vendors Not Found!")
+    }
+
+    res.status(200).json(vendors)
+
 }
 
 const updateVendor = async (req, res) => {
-    res.send("Update Vendor")
+
+    const vendorId = req.params.vid
+    const { status } = req.body
+
+    if (!status) {
+        res.status(409)
+        throw new Error("Please Add Status!")
+    }
+
+    const vendor = await Vendor.findById(vendorId)
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor Not Found!")
+    }
+
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(vendor._id, { status }, { new: true })
+
+    if (!updateVendor) {
+        res.status(409)
+        throw new Error("Vendor Not Updated")
+    }
+
+    let user = await User.findById(vendor.user)
+
+    if (!user) {
+        res.status(409)
+        throw new Error("Invalid User Id")
+    }
+
+    await User.findByIdAndUpdate(user._id, { isVendor: true }, { new: true })
+
+    res.status(200).json(vendor)
+
 }
 
 
@@ -42,6 +86,9 @@ const getAllRatings = async (req, res) => {
 const updateProduct = async (req, res) => {
     res.send("Product Update")
 }
+
+
+
 
 const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllRatings, getAllVendors, updateUser, updateVendor, updateProduct }
 
