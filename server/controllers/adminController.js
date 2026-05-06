@@ -1,3 +1,4 @@
+import Product from "../models/productModel.js"
 import User from "../models/userModel.js"
 import Vendor from "../models/vendorModel.js"
 
@@ -69,7 +70,16 @@ const updateVendor = async (req, res) => {
 
 
 const getAllProducts = async (req, res) => {
-    res.send("All Products")
+    const products = await Product.find()
+
+    if (!products) {
+        res.status(404)
+        throw new Error("Product Not Found!")
+    }
+
+
+
+    res.status(200).json(products)
 }
 
 
@@ -83,13 +93,10 @@ const getAllRatings = async (req, res) => {
 }
 
 
-const updateProduct = async (req, res) => {
-    res.send("Product Update")
-}
 
 
 
 
-const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllRatings, getAllVendors, updateUser, updateVendor, updateProduct }
+const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllRatings, getAllVendors, updateUser, updateVendor }
 
 export default adminController

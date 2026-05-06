@@ -77,12 +77,103 @@ const addProduct = async (req, res) => {
 }
 
 
+const getMyProducts = async (req, res) => {
+
+    const userId = req.user._id
+
+
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+
+    const products = await Product.find({ vendor: vendor._id })
+
+    if (!products) {
+        res.status(404)
+        throw new Error("Product Not Found!")
+    }
+
+    res.status(200).json(products)
+
+}
+
+
+const updateProduct = async (req, res) => {
+
+    const userId = req.user._id
+
+
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+    // Check if product exists
+    const product = await Product.findById(req.params.pid)
+
+    if (!product) {
+        res.status(404)
+        throw new Error("Product Not Found!")
+    }
+
+    if (product.vendor.toString() !== vendor._id.toString()) {
+        res.status(401)
+        throw new Error("Unable to update product")
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.pid, req.body, { new: true })
+
+    if (!updatedProduct) {
+        res.status(404)
+        throw new Error("Product not updated")
+    }
+
+    res.status(200).json(updatedProduct)
+
+}
+
+const getVendors = async (req, res) => {
+    const vendors = await Vendor.find()
+
+    if (!vendors) {
+        res.status(404)
+        throw new Error("Vendor Not Found!")
+    }
+
+    const activeVendors = vendors.filter(vendor => vendor.status === "active")
+
+    res.status(200).json(activeVendors)
+
+}
+
+const getVendor = async (req, res) => {
+
+    const vendorId = req.params.vid
+
+    const vendor = await Vendor.findById(vendorId)
+
+    if (!vendor || !vendor.status === "active") {
+        res.status(404)
+        throw new Error("Vendor Not Found!")
+    }
 
 
 
+    res.status(200).json(vendor)
+
+}
 
 
-const vendorController = { becomeVendor, addProduct }
+
+const vendorController = { becomeVendor, addProduct, getMyProducts, updateProduct, getVendors, getVendor }
 
 
 export default vendorController

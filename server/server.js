@@ -8,6 +8,7 @@ dotenv.config()
 import authRoutes from "./routes/authRoutes.js"
 import adminRoutes from "./routes/adminRoutes.js"
 import vendorRoutes from "./routes/vendorRoutes.js"
+import productRoutes from "./routes/productRoutes.js"
 import errorHandler from "./middleware/errorHandler.js"
 
 const PORT = process.env.PORT || 5000
@@ -40,6 +41,9 @@ app.use("/api/admin", adminRoutes)
 // Vendor Routes
 app.use("/api/vendor", vendorRoutes)
 
+
+// Product Routes
+app.use("/api/products", productRoutes)
 
 // Error Handler
 app.use(errorHandler)

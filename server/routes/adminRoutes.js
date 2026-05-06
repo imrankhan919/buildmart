@@ -13,7 +13,6 @@ router.get("/ratings", protect.forAdmin, adminController.getAllRatings)
 
 router.put("/users/:uid", protect.forAdmin, adminController.updateUser)
 router.put("/vendors/:vid", protect.forAdmin, adminController.updateVendor)
-router.put("/products/:pid", protect.forAdmin, adminController.updateProduct)
 
 
 
