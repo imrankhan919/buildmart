@@ -9,6 +9,7 @@ import authRoutes from "./routes/authRoutes.js"
 import adminRoutes from "./routes/adminRoutes.js"
 import vendorRoutes from "./routes/vendorRoutes.js"
 import productRoutes from "./routes/productRoutes.js"
+import couponRoutes from "./routes/couponRoutes.js"
 import errorHandler from "./middleware/errorHandler.js"
 
 const PORT = process.env.PORT || 5000
@@ -44,6 +45,10 @@ app.use("/api/vendor", vendorRoutes)
 
 // Product Routes
 app.use("/api/products", productRoutes)
+
+// Coupon Routes
+app.use("/api/coupons", couponRoutes)
+
 
 // Error Handler
 app.use(errorHandler)

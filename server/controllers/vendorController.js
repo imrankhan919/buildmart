@@ -1,5 +1,8 @@
+import fs from "node:fs"
+import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js"
 import Product from "../models/productModel.js"
 import Vendor from "../models/vendorModel.js"
+import Coupon from "../models/couponModel.js"
 
 const becomeVendor = async (req, res) => {
 
@@ -59,12 +62,21 @@ const addProduct = async (req, res) => {
 
     const { name, description, price, category, stock } = req.body
 
-    if (!name || !description || !price || !category || !stock) {
+    if (!name || !description || !price || !category || !stock || !req.file.path) {
         res.status(409)
         throw new Error("Please Fill All Details!")
     }
 
-    const product = await Product.create({ name, price, description, category, stock, image: req.file.path, vendor: vendor._id })
+    console.log(req.file)
+
+    // Upload Product Image To Cloudinary
+    let uploadResult = await uploadToCloudinary(req.file.path)
+
+    // Remove Image From Server
+    fs.unlinkSync(req.file.path)
+
+
+    const product = await Product.create({ name, price, description, category, stock, image: uploadResult.secure_url, vendor: vendor._id })
 
     if (!product) {
         res.status(409)
@@ -141,7 +153,7 @@ const updateProduct = async (req, res) => {
 }
 
 const getVendors = async (req, res) => {
-    const vendors = await Vendor.find()
+    const vendors = await Vendor.find().populate('user')
 
     if (!vendors) {
         res.status(404)
@@ -158,7 +170,7 @@ const getVendor = async (req, res) => {
 
     const vendorId = req.params.vid
 
-    const vendor = await Vendor.findById(vendorId)
+    const vendor = await Vendor.findById(vendorId).populate('user')
 
     if (!vendor || !vendor.status === "active") {
         res.status(404)
@@ -172,8 +184,70 @@ const getVendor = async (req, res) => {
 }
 
 
+const createCoupon = async (req, res) => {
 
-const vendorController = { becomeVendor, addProduct, getMyProducts, updateProduct, getVendors, getVendor }
+    const userId = req.user._id
+
+
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+    const { couponCode, couponDiscount } = req.body
+
+    if (!couponCode || !couponDiscount) {
+        res.status(409)
+        throw new Error("Please Fill All Details!")
+    }
+
+    const coupon = await Coupon.create({
+        couponCode, couponDiscount, vendor: vendor._id
+    })
+
+    if (!coupon) {
+        res.status(409)
+        throw new Error("Coupon Not Created")
+    }
+
+
+    res.status(201).json(coupon)
+}
+
+
+const updateCoupon = async (req, res) => {
+
+    const userId = req.user._id
+
+
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+    const updatedCoupon = await Coupon.findByIdAndUpdate(req.params.cid, req.body, { new: true })
+
+    if (!updatedCoupon) {
+        res.status(409)
+        throw new Error("Coupon Not Updated")
+    }
+
+
+    res.status(201).json(updatedCoupon)
+
+
+}
+
+
+
+
+const vendorController = { becomeVendor, addProduct, getMyProducts, updateProduct, getVendors, getVendor, createCoupon, updateCoupon }
 
 
 export default vendorController

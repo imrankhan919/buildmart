@@ -12,6 +12,8 @@ router.post("/request", protect.forUser, vendorController.becomeVendor)
 router.get("/product", protect.forUser, vendorController.getMyProducts)
 router.post("/product", protect.forUser, upload.single('image'), vendorController.addProduct)
 router.put("/product/:pid", protect.forUser, upload.single('image'), vendorController.updateProduct)
+router.post("/coupon", protect.forUser, vendorController.createCoupon)
+router.put("/coupon/:cid", protect.forUser, vendorController.updateCoupon)
 
 
 export default router
