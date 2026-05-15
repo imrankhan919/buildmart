@@ -11,6 +11,7 @@ import vendorRoutes from "./routes/vendorRoutes.js"
 import productRoutes from "./routes/productRoutes.js"
 import couponRoutes from "./routes/couponRoutes.js"
 import cartRoutes from "./routes/cartRoutes.js"
+import orderRoutes from "./routes/orderRoutes.js"
 import errorHandler from "./middleware/errorHandler.js"
 
 const PORT = process.env.PORT || 5000
@@ -43,7 +44,6 @@ app.use("/api/admin", adminRoutes)
 // Vendor Routes
 app.use("/api/vendor", vendorRoutes)
 
-
 // Product Routes
 app.use("/api/products", productRoutes)
 
@@ -53,7 +53,8 @@ app.use("/api/coupons", couponRoutes)
 // Cart Routes
 app.use("/api/cart", cartRoutes)
 
-
+// Order Routes
+app.use("/api/order", orderRoutes)
 
 // Error Handler
 app.use(errorHandler)
