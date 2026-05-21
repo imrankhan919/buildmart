@@ -113,7 +113,7 @@ const cancelOrder = async (req, res) => {
         res.status(200).json(cancelledOrder)
     } else {
         res.status(409)
-        throw new Error("Order Cannot Be Cancelled! After Dispatched")
+        throw new Error("Order Cannot Be Cancelled! After " + order.status)
     }
 
 }

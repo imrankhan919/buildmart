@@ -3,6 +3,7 @@ import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js"
 import Product from "../models/productModel.js"
 import Vendor from "../models/vendorModel.js"
 import Coupon from "../models/couponModel.js"
+import Order from "../models/orderModel.js"
 
 const becomeVendor = async (req, res) => {
 
@@ -245,9 +246,105 @@ const updateCoupon = async (req, res) => {
 }
 
 
+const getMyOrders = async (req, res) => {
+
+    const userId = req.user._id
 
 
-const vendorController = { becomeVendor, addProduct, getMyProducts, updateProduct, getVendors, getVendor, createCoupon, updateCoupon }
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+
+    const orders = await Order.find({ vendor: vendor._id }).populate('user').populate("products.product")
+
+    if (!orders) {
+        res.status(404)
+        throw new Error("Orders Not Found!")
+    }
+
+    res.status(200).json(orders)
+}
+
+
+
+const getUserOrder = async (req, res) => {
+
+    const userId = req.user._id
+    const orderId = req.params.oid
+
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+
+    const order = await Order.findById(orderId).populate('user').populate("products.product")
+
+    if (!order) {
+        res.status(404)
+        throw new Error("Order Not Found!")
+    }
+
+    res.status(200).json(order)
+}
+
+
+const updateOrder = async (req, res) => {
+
+    const userId = req.user._id
+    const orderId = req.params.oid
+
+    const { status } = req.body
+
+    if (!status) {
+        res.json(409)
+        throw new Error("Please Enter Status!")
+    }
+
+    // check if vendor exists
+    const vendor = await Vendor.findOne({ user: userId })
+
+    if (!vendor) {
+        res.status(404)
+        throw new Error("Vendor not found")
+    }
+
+
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, { status }, { new: true })
+
+    if (!updatedOrder) {
+        res.status(409)
+        throw new Error("Order Not Updated!")
+    }
+
+    res.status(200).json(updatedOrder)
+}
+
+
+
+
+
+const vendorController = {
+    becomeVendor,
+    addProduct,
+    getMyProducts,
+    updateProduct,
+    getVendors,
+    getVendor,
+    createCoupon,
+    updateCoupon,
+    getMyOrders,
+    getUserOrder,
+    updateOrder
+}
 
 
 export default vendorController
