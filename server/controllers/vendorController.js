@@ -68,8 +68,6 @@ const addProduct = async (req, res) => {
         throw new Error("Please Fill All Details!")
     }
 
-    console.log(req.file)
-
     // Upload Product Image To Cloudinary
     let uploadResult = await uploadToCloudinary(req.file.path)
 
