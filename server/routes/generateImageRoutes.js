@@ -3,6 +3,7 @@ import protect from "../middleware/authMiddleware.js"
 import generateImageController from "../controllers/genrateImageController.js"
 
 
+
 const router = express.Router()
 
 

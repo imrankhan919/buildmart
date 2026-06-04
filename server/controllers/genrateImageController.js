@@ -115,42 +115,45 @@ const generate2DImage = async (userId, prompt) => {
 
 const generateFloorPlan = async (req, res) => {
 
-    const { plotSize, floors, extraInforation } = req.body
+    const { plotSize, floors, extraInformation } = req.body
+
+    if (!plotSize || !floors || !extraInformation) {
+        res.status(409)
+        throw new Error("Please fill all details...")
+    }
+
 
     const userId = req.user._id
 
 
-    const prompt = `Architectural 2D floor plan, top-down view, blueprint style.
+    // Check if sufficient credits exist
+    if (req.user.credits >= 2) {
+        const prompt = `Architectural 2D floor plan, top-down view, blueprint style.
     Plot size: ${plotSize}
     Floors: ${floors}
-    Rooms: ${extraInforation}
+    Rooms: ${extraInformation}
     Style: Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
     Strictly flat 2D overhead plan. Professional blueprint aesthetic.`
 
+        const floorPlan = await generate2DImage(userId, prompt)
 
+        // Create Floor Plan In DB
+        const plan = new GeneratedPlan({
+            user: userId,
+            floorPlan: floorPlan
+        })
 
-    const floorPlan = await generate2DImage(userId, prompt)
-
-    console.log(floorPlan)
-
-    // Create Floor Plan In DB
-    const plan = new GeneratedPlan({
-        user: userId,
-        floorPlan: floorPlan
-    })
-
-    if (!floorPlan) {
+        if (!floorPlan) {
+            res.status(409)
+            throw new Error("Cannot Generate Floor Plan")
+        }
+        await plan.save()
+        await plan.populate('user')
+        res.status(201).json(plan)
+    } else {
         res.status(409)
-        throw new Error("Cannot Generate Floor Plan")
+        throw new Error("Not Sufficient Credits")
     }
-
-    await plan.save()
-    await plan.populate('user')
-
-
-
-    res.status(201).json(plan)
-
 
 }
 
@@ -171,6 +174,9 @@ const getFloorPlans = async (req, res) => {
 
 const generateFinalPlan = async (req, res) => {
 
+    const { numberOfFloors, plotSize, facingDirection, architecturalStyle, wallFinish, roofType, balcony, additionalFeatures } = req.body
+
+
     const pid = req.params.pid
 
     const plan = await GeneratedPlan.findById(pid)
@@ -181,34 +187,43 @@ const generateFinalPlan = async (req, res) => {
     }
 
 
-    const prompt = `Analyze this 2D floor plan and generate a photorealistic 3D exterior elevation image of this exact house. 
+    // Check if sufficient credits exits
+    if (req.user.credits >= 3) {
+        const prompt = `Analyze this 2D floor plan and generate a photorealistic 3D exterior elevation image of this exact house. 
 
-Building details:
-- Double storey (G+1), 60x90 ft plot, East facing
-- Modern contemporary architectural style
-- Smooth stucco walls, off-white primary color, dark brown trim accents
-- Flat roof with parapet wall, front balcony with glass railing
-- Large entrance door, floor-to-ceiling windows, LED facade lighting
-- Landscaped front garden with pathway
+    Building details:
+    - number of floors ${numberOfFloors}
+    - plot size  ${plotSize}
+    - facing direction ${facingDirection}
+    - architectural style ${architecturalStyle}
+    - wall finish ${wallFinish}
+    - roof type ${roofType}
+    - balcony ${balcony}
+    - additional features ${additionalFeatures}
 
-Render as: photorealistic architectural visualization, 3/4 perspective view, golden hour lighting, 8K ultra-detailed, sharp focus, lush surroundings, blue sky background, no people, hyper-realistic materials and textures --ar 16:9`
+    Render as:photorealistic architectural visualization, 3/4 perspective view, golden hour lighting, 8K ultra-detailed, sharp focus, lush surroundings, blue sky background, no people, hyper-realistic materials and textures --ar 16:9`
 
 
-    const finalPlan = await generate3dImage(plan?.floorPlan, prompt)
+        const finalPlan = await generate3dImage(plan?.floorPlan, prompt)
 
-    if (!finalPlan) {
+        if (!finalPlan) {
+            res.status(409)
+            throw new Error("Error in creating floor plan")
+        }
+
+        const updatedPlan = await GeneratedPlan.findByIdAndUpdate(pid, { finalDesign: finalPlan }, { new: true })
+
+        if (!updatedPlan) {
+            res.status(409)
+            throw new Error("Plan Not Updated!")
+        }
+
+        res.status(200).json(updatedPlan)
+    } else {
         res.status(409)
-        throw new Error("Error in creating floor plan")
+        throw new Error("Not Sufficient Credits")
     }
 
-    const updatedPlan = await GeneratedPlan.findByIdAndUpdate(pid, { finalDesign: finalPlan }, { new: true })
-
-    if (!updatedPlan) {
-        res.status(409)
-        throw new Error("Plan Not Updated!")
-    }
-
-    res.status(200).json(updatedPlan)
 }
 
 
