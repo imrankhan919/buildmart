@@ -1,3 +1,5 @@
+import CreditRequest from "../models/creditRequestModel.js"
+import Order from "../models/orderModel.js"
 import Product from "../models/productModel.js"
 import User from "../models/userModel.js"
 import Vendor from "../models/vendorModel.js"
@@ -84,7 +86,16 @@ const getAllProducts = async (req, res) => {
 
 
 const getAllOrders = async (req, res) => {
-    res.send("All Orders Here")
+    const orders = await Order.find()
+
+    if (!orders) {
+        res.status(404)
+        throw new Error("Orders Not Found!")
+    }
+
+
+
+    res.status(200).json(orders)
 }
 
 
@@ -92,11 +103,48 @@ const getAllRatings = async (req, res) => {
     res.send("All Ratings Here")
 }
 
+const updateCredits = async (req, res) => {
+
+    const requestId = req.params.rid
+    const { isGranted } = req.body
+
+    if (!isGranted) {
+        res.status(409)
+        throw new Error('Status Not Found!')
+    }
+
+    const creditRequest = await CreditRequest.findById(requestId)
+
+    if (!creditRequest) {
+        res.status(404)
+        throw new Error("Credit Request Not Found!")
+    }
+
+    const updatedRequest = await CreditRequest.findByIdAndUpdate(requestId, { isGranted: req.body.isGranted })
+
+    if (updatedRequest.isGranted) {
+        const updatedUser = await User.findByIdAndUpdate(creditRequest.user, { credits: creditRequest.credits }, { new: true })
+
+        if (!updatedRequest || !updateUser) {
+            res.status(409)
+            throw new Error("Credits Not Granted!")
+        }
+
+        res.status(200).json({
+            message: "Credits Granted",
+            creditRequest: updatedRequest
+        })
+    } else {
+        res.status(409)
+        throw new Error("Credits Not Granted!")
+    }
+
+
+}
 
 
 
 
-
-const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllRatings, getAllVendors, updateUser, updateVendor }
+const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllRatings, getAllVendors, updateUser, updateVendor, updateCredits }
 
 export default adminController

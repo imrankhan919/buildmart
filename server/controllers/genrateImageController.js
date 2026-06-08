@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 import path from "node:path";
 import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js";
 import GeneratedPlan from "../models/generatedPlanModel.js";
+import User from "../models/userModel.js"
 
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -125,15 +126,21 @@ const generateFloorPlan = async (req, res) => {
 
     const userId = req.user._id
 
+    const user = await User.findById(userId)
+
 
     // Check if sufficient credits exist
     if (req.user.credits >= 2) {
+
+        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - 2 }, { new: true })
+
+
         const prompt = `Architectural 2D floor plan, top-down view, blueprint style.
-    Plot size: ${plotSize}
-    Floors: ${floors}
-    Rooms: ${extraInformation}
-    Style: Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
-    Strictly flat 2D overhead plan. Professional blueprint aesthetic.`
+        Plot size: ${plotSize}
+        Floors: ${floors}
+        Rooms: ${extraInformation}
+        Style: Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
+        Strictly flat 2D overhead plan. Professional blueprint aesthetic.`
 
         const floorPlan = await generate2DImage(userId, prompt)
 
@@ -178,6 +185,8 @@ const generateFinalPlan = async (req, res) => {
 
 
     const pid = req.params.pid
+    const userId = req.user._id
+    const user = await User.findById(userId)
 
     const plan = await GeneratedPlan.findById(pid)
 
@@ -189,6 +198,10 @@ const generateFinalPlan = async (req, res) => {
 
     // Check if sufficient credits exits
     if (req.user.credits >= 3) {
+
+        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - 3 }, { new: true })
+
+
         const prompt = `Analyze this 2D floor plan and generate a photorealistic 3D exterior elevation image of this exact house. 
 
     Building details:

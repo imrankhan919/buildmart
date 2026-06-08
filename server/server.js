@@ -13,6 +13,7 @@ import couponRoutes from "./routes/couponRoutes.js"
 import cartRoutes from "./routes/cartRoutes.js"
 import orderRoutes from "./routes/orderRoutes.js"
 import imageRoutes from "./routes/generateImageRoutes.js"
+import creditRoutes from "./routes/creditRoutes.js"
 import errorHandler from "./middleware/errorHandler.js"
 
 const PORT = process.env.PORT || 5000
@@ -59,6 +60,9 @@ app.use("/api/order", orderRoutes)
 
 // Image Gen Routes
 app.use("/api/generate", imageRoutes)
+
+// Credit Routes
+app.use("/api/credits", creditRoutes)
 
 // Error Handler
 app.use(errorHandler)
