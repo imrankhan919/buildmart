@@ -108,28 +108,27 @@ const updateCredits = async (req, res) => {
     const requestId = req.params.rid
     const { isGranted } = req.body
 
+    const status = JSON.parse(isGranted)
+
+
     if (!isGranted) {
         res.status(409)
         throw new Error('Status Not Found!')
     }
 
     const creditRequest = await CreditRequest.findById(requestId)
+    const user = await User.findById(creditRequest.user)
 
     if (!creditRequest) {
         res.status(404)
         throw new Error("Credit Request Not Found!")
     }
 
-    const updatedRequest = await CreditRequest.findByIdAndUpdate(requestId, { isGranted: req.body.isGranted })
+    const updatedRequest = await CreditRequest.findByIdAndUpdate(requestId, { isGranted: status })
 
-    if (updatedRequest.isGranted) {
-        const updatedUser = await User.findByIdAndUpdate(creditRequest.user, { credits: creditRequest.credits }, { new: true })
 
-        if (!updatedRequest || !updateUser) {
-            res.status(409)
-            throw new Error("Credits Not Granted!")
-        }
-
+    if (status) {
+        const updatedUser = await User.findByIdAndUpdate(creditRequest.user, { credits: creditRequest.credits + user.credits }, { new: true })
         res.status(200).json({
             message: "Credits Granted",
             creditRequest: updatedRequest
