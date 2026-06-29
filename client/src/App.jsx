@@ -1,4 +1,5 @@
 import React from 'react';
+import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
@@ -41,6 +42,7 @@ export default function App() {
 
           {/* Footer at the bottom of every page */}
           <Footer />
+          {/* <Toaster /> */}
         </div>
       </BrowserRouter>
     </>

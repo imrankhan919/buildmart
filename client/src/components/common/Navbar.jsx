@@ -24,47 +24,10 @@ export default function Navbar() {
       : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
     }`;
 
-  const handleRoleChange = (e) => {
-    const selectedRole = e.target.value;
 
-    // Simulate updating user properties based on selected role
-    if (selectedRole === 'guest') {
-      setUser({ role: 'guest', name: '', email: '', phone: '', location: '' });
-      navigate('/');
-    } else if (selectedRole === 'buyer') {
-      setUser({
-        role: 'buyer',
-        name: 'Ramesh Kumar',
-        email: 'ramesh.kumar@buildmart.com',
-        phone: '+91 98765 12345',
-        location: 'Indore, Madhya Pradesh',
-      });
-      navigate('/profile');
-    } else if (selectedRole === 'vendor') {
-      setUser({
-        role: 'vendor',
-        name: 'Ramesh Khandelwal',
-        businessName: 'Narmada Building Materials',
-        email: 'ramesh.narmada@buildmart.com',
-        phone: '+91 98765 43210',
-        location: 'Indore, Madhya Pradesh',
-      });
-      navigate('/dashboard');
-    } else if (selectedRole === 'admin') {
-      setUser({
-        role: 'admin',
-        name: 'Super Administrator',
-        email: 'admin@buildmart.com',
-        phone: '+91 99999 99999',
-        location: 'Indore Headquarters',
-      });
-      navigate('/admin');
-    }
-  };
 
   const handleLogout = () => {
-    setUser({ role: 'guest', name: '', email: '', phone: '', location: '' });
-    navigate('/');
+
   };
 
   return (
@@ -99,59 +62,28 @@ export default function Navbar() {
               Vendors
             </NavLink>
 
-            {/* Conditional Vendor Dashboard */}
-            {user.role === 'vendor' && (
-              <NavLink to="/dashboard" className={navLinkClass}>
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Vendor Desk</span>
-              </NavLink>
-            )}
-
-            {/* Conditional Admin Dashboard */}
-            {user.role === 'admin' && (
-              <NavLink to="/admin" className={navLinkClass}>
-                <ShieldAlert className="w-4 h-4" />
-                <span>Admin Console</span>
-              </NavLink>
-            )}
           </div>
 
           {/* Desktop Controls (Right) */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Authentication Buttons / Profile Info */}
 
-            {/* Simulated Role Switcher Dropdown */}
-            <div className="flex items-center gap-1 bg-slate-850 border border-slate-700/80 px-2.5 py-1 rounded-xl">
-              <span className="text-[10px] uppercase font-black tracking-wide text-slate-400">Test Role:</span>
-              <select
-                value={user.role}
-                onChange={handleRoleChange}
-                className="bg-transparent text-amber-500 text-xs font-bold focus:outline-none cursor-pointer pr-1"
+            <div className="flex items-center gap-4">
+              <Link
+                to="/login"
+                className="text-slate-300 hover:text-white text-sm font-semibold transition-colors duration-200"
               >
-                <option value="guest" className="bg-slate-905 text-white">Guest (Out)</option>
-                <option value="buyer" className="bg-slate-905 text-white">Buyer (Ramesh)</option>
-                <option value="vendor" className="bg-slate-905 text-white">Vendor (Narmada)</option>
-                <option value="admin" className="bg-slate-905 text-white">Admin (Console)</option>
-              </select>
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold px-4 py-2 rounded-xl text-sm transition-all duration-300 hover:shadow-md hover:shadow-amber-500/10 transform hover:-translate-y-0.5"
+              >
+                Register
+              </Link>
             </div>
 
-            {/* Authentication Buttons / Profile Info */}
-            {user.role === 'guest' ? (
-              <div className="flex items-center gap-4">
-                <Link
-                  to="/login"
-                  className="text-slate-300 hover:text-white text-sm font-semibold transition-colors duration-200"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold px-4 py-2 rounded-xl text-sm transition-all duration-300 hover:shadow-md hover:shadow-amber-500/10 transform hover:-translate-y-0.5"
-                >
-                  Register
-                </Link>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
                 <Link
                   to="/profile"
                   className="flex items-center gap-2 hover:opacity-90 transition-opacity bg-slate-800 border border-slate-700/50 px-3 py-1.5 rounded-xl shadow-sm"
@@ -170,7 +102,7 @@ export default function Navbar() {
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            )}
+    */}
           </div>
 
           {/* Mobile Hamburger Menu Trigger */}
@@ -254,47 +186,32 @@ export default function Navbar() {
           {/* Mobile Test Switcher and Auth buttons */}
           <div className="pt-4 border-t border-slate-850 px-4 space-y-4">
 
-            {/* Mobile Switcher */}
-            <div className="flex items-center justify-between bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl">
-              <span className="text-xs uppercase font-black text-slate-400 tracking-wide">Simulate User Role:</span>
-              <select
-                value={user.role}
-                onChange={(e) => { handleRoleChange(e); setIsMobileMenuOpen(false); }}
-                className="bg-transparent text-amber-500 text-xs font-bold focus:outline-none cursor-pointer"
+
+
+            <div className="flex flex-col gap-3">
+              <Link
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-center border border-slate-705 text-slate-300 hover:text-white py-2.5 rounded-xl font-bold text-sm"
               >
-                <option value="guest" className="bg-slate-900 text-white">Guest (Out)</option>
-                <option value="buyer" className="bg-slate-900 text-white">Buyer (Ramesh)</option>
-                <option value="vendor" className="bg-slate-900 text-white">Vendor (Narmada)</option>
-                <option value="admin" className="bg-slate-900 text-white">Admin (Console)</option>
-              </select>
+                Login
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold py-2.5 rounded-xl text-sm text-center"
+              >
+                Register
+              </Link>
             </div>
 
-            {user.role === 'guest' ? (
-              <div className="flex flex-col gap-3">
-                <Link
-                  to="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-center border border-slate-705 text-slate-300 hover:text-white py-2.5 rounded-xl font-bold text-sm"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold py-2.5 rounded-xl text-sm text-center"
-                >
-                  Register
-                </Link>
-              </div>
-            ) : (
-              <button
-                onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+            {/* <button
                 className="w-full flex items-center justify-center gap-2 border border-slate-800 text-red-405 font-bold py-2.5 rounded-xl text-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
-              </button>
-            )}
+              </button> */}
+
           </div>
         </div>
       )}
