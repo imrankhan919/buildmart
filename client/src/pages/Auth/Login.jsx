@@ -1,28 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Key, Hammer, Eye, EyeOff } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { login } from '../../services/authService';
+import Loader from '../../components/common/Loader';
+import { useDispatch } from 'react-redux';
+import { loginUser } from '../../features/auth/authSlice';
 
 export default function Login() {
+
+  const { mutate, data, isPending, isSuccess, isError, error } = useMutation({ mutationFn: (data) => login(data) })
+
+
+  const dispatch = useDispatch()
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  })
+
+  const { email, password } = formData
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+
   const handleLogin = (e) => {
     e.preventDefault();
-    const newErrors = {};
-    if (!email) newErrors.email = 'Email address is required';
-    if (!password) newErrors.password = 'Password is required';
+    mutate(formData)
+  };
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+
+
+
+
+  useEffect(() => {
+    if (data && isSuccess) {
+      dispatch(loginUser(data))
     }
 
-    // Simulate login success and redirect to dashboard
-    navigate('/dashboard');
-  };
+    if (data) {
+      navigate("/profile")
+    }
+
+
+    if (isError && error) {
+      window.alert(error.response.data.message)
+    }
+
+  }, [data, isSuccess, isError, data])
+
+
+  if (isPending) {
+    return <Loader message="Logging In User..." />
+  }
+
+
 
   return (
     <div className="bg-slate-50 min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative select-none">
@@ -31,7 +71,7 @@ export default function Login() {
       <div className="absolute bottom-10 right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl"></div>
 
       <div className="max-w-md w-full space-y-8 bg-white border border-slate-100 p-8 sm:p-10 rounded-3xl shadow-xl relative z-10">
-        
+
         {/* Logo/Header */}
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-extrabold text-xl shadow mb-4">
@@ -50,13 +90,13 @@ export default function Login() {
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4.5 h-4.5" />
                 <input
+                  name='email'
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setErrors((prev) => ({ ...prev, email: null })); }}
+                  onChange={handleChange}
                   placeholder="you@example.com"
-                  className={`w-full pl-11 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${
-                    errors.email ? 'border-red-300' : 'border-slate-200'
-                  }`}
+                  className={`w-full pl-11 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${errors.email ? 'border-red-300' : 'border-slate-200'
+                    }`}
                 />
               </div>
               {errors.email && <p className="text-[10px] text-red-500 font-bold mt-1.5">{errors.email}</p>}
@@ -73,11 +113,11 @@ export default function Login() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: null })); }}
+                  name='password'
+                  onChange={handleChange}
                   placeholder="••••••••"
-                  className={`w-full pl-11 pr-11 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${
-                    errors.password ? 'border-red-300' : 'border-slate-200'
-                  }`}
+                  className={`w-full pl-11 pr-11 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${errors.password ? 'border-red-300' : 'border-slate-200'
+                    }`}
                 />
                 <button
                   type="button"

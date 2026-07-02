@@ -63,13 +63,17 @@ export default function Register() {
     }
 
 
+    if (data) {
+      navigate("/profile")
+    }
+
 
     if (isError && error) {
       window.alert(error.response.data.message)
     }
 
 
-  }, [data, isSuccess, isError, confirmPassword])
+  }, [data, isSuccess, isError, data])
 
   if (isPending) {
     return <Loader message="Register User..." />

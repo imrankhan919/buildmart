@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Hammer, FileText, ShoppingBag, Users, LayoutDashboard, User, ShieldAlert, LogOut } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser } from '../../features/auth/authSlice';
 
 export default function Navbar() {
 
   const { user } = useSelector(state => state.auth)
 
-
+  const dispatch = useDispatch()
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -27,8 +28,12 @@ export default function Navbar() {
 
 
   const handleLogout = () => {
-
+    dispatch(logoutUser())
+    navigate("/login")
   };
+
+
+
 
   return (
     <nav className="sticky top-0 z-50 bg-[#0F172A] border-b border-slate-800 shadow-lg select-none">
@@ -68,41 +73,53 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {/* Authentication Buttons / Profile Info */}
 
-            <div className="flex items-center gap-4">
-              <Link
-                to="/login"
-                className="text-slate-300 hover:text-white text-sm font-semibold transition-colors duration-200"
-              >
-                Login
-              </Link>
-              <Link
-                to="/register"
-                className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold px-4 py-2 rounded-xl text-sm transition-all duration-300 hover:shadow-md hover:shadow-amber-500/10 transform hover:-translate-y-0.5"
-              >
-                Register
-              </Link>
-            </div>
+            {
+              !user ? (
+                <>
 
-            {/* <div className="flex items-center gap-3">
-                <Link
-                  to="/profile"
-                  className="flex items-center gap-2 hover:opacity-90 transition-opacity bg-slate-800 border border-slate-700/50 px-3 py-1.5 rounded-xl shadow-sm"
-                  title="My Profile"
-                >
-                  <div className="w-6.5 h-6.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">
-                    {user.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                  <div className="flex items-center gap-4">
+                    <Link
+                      to="/login"
+                      className="text-slate-300 hover:text-white text-sm font-semibold transition-colors duration-200"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold px-4 py-2 rounded-xl text-sm transition-all duration-300 hover:shadow-md hover:shadow-amber-500/10 transform hover:-translate-y-0.5"
+                    >
+                      Register
+                    </Link>
                   </div>
-                  <span className="text-slate-205 text-xs font-bold max-w-[90px] truncate">{user.name}</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-    */}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2 hover:opacity-90 transition-opacity bg-slate-800 border border-slate-700/50 px-3 py-1.5 rounded-xl shadow-sm"
+                      title="My Profile"
+                    >
+                      <div className="w-6.5 h-6.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">
+                        {user?.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                      </div>
+                      <span className="text-slate-200 text-xs font-bold max-w-[90px] truncate">{user?.name}</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                      title="Logout"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                </>
+              )
+            }
+
+
+
           </div>
 
           {/* Mobile Hamburger Menu Trigger */}
@@ -152,7 +169,7 @@ export default function Navbar() {
               Vendors
             </NavLink>
 
-            {user.role === 'vendor' && (
+            {user?.role === 'vendor' && (
               <NavLink
                 to="/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -162,7 +179,7 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {user.role === 'admin' && (
+            {user?.role === 'admin' && (
               <NavLink
                 to="/admin"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -172,7 +189,7 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {user.role !== 'guest' && (
+            {user?.role !== 'guest' && (
               <NavLink
                 to="/profile"
                 onClick={() => setIsMobileMenuOpen(false)}

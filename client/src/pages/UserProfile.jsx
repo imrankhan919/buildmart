@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Sparkles, ShoppingBag, FileText, ArrowRight, ShieldCheck, Download, Trash2, Calendar, Award } from 'lucide-react';
 import { useSelector } from 'react-redux';
@@ -72,7 +72,22 @@ export default function UserProfile() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  if (user.role === 'guest') {
+
+  useEffect(() => {
+
+    if (user?.isAdmin) {
+      navigate("/admin")
+    }
+
+    if (!user) {
+      navigate("/login")
+    }
+  }, [user])
+
+
+
+
+  if (user?.role === 'guest') {
     return (
       <div className="bg-slate-50 min-h-[70vh] flex items-center justify-center p-4">
         <div className="bg-white border border-slate-100 rounded-3xl p-8 max-w-sm text-center shadow-md">
@@ -110,18 +125,18 @@ export default function UserProfile() {
 
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
             <div className="w-16 h-16 rounded-2xl bg-amber-500 text-slate-950 font-black text-xl flex items-center justify-center shadow-md">
-              {user.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+              {user?.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
             </div>
             <div className="space-y-1">
-              <h1 className="text-2xl font-black">{user.name}</h1>
+              <h1 className="text-2xl font-black">{user?.name}</h1>
               <p className="text-slate-400 text-xs flex items-center justify-center sm:justify-start gap-1 font-semibold uppercase tracking-wider">
                 <span className="w-2 h-2 bg-green-500 rounded-full border border-white"></span>
-                Role: {user.role === 'admin' ? 'Administrator' : user.role === 'vendor' ? 'Supplier' : 'Buyer / Builder'}
+                Role: {user?.role === 'admin' ? 'Administrator' : user?.role === 'vendor' ? 'Supplier' : 'Buyer / Builder'}
               </p>
             </div>
           </div>
 
-          {user.role === 'buyer' && (
+          {user?.role === 'buyer' && (
             <button
               onClick={handleBecomeVendor}
               className="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold px-5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-all duration-300 shadow-md shadow-amber-500/10 transform hover:-translate-y-0.5 shrink-0"
@@ -144,21 +159,21 @@ export default function UserProfile() {
               <div className="space-y-3.5">
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="w-4.5 h-4.5 text-slate-400" />
-                  <span className="text-slate-650 font-medium">{user.email}</span>
+                  <span className="text-slate-650 font-medium">{user?.email}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="w-4.5 h-4.5 text-slate-400" />
-                  <span className="text-slate-700 font-bold">{user.phone}</span>
+                  <span className="text-slate-700 font-bold">{user?.phone}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <MapPin className="w-4.5 h-4.5 text-slate-400" />
-                  <span className="text-slate-650 font-medium">{user.location}</span>
+                  <span className="text-slate-650 font-medium">{user?.location}</span>
                 </div>
               </div>
             </div>
 
             {/* Become a Vendor Promotion Card (rendered for Buyer role) */}
-            {user.role === 'buyer' && (
+            {user?.role === 'buyer' && (
               <div className="bg-gradient-to-br from-amber-500 to-orange-500 text-slate-950 rounded-3xl p-6 shadow-md relative overflow-hidden select-none">
                 <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-white/10 rounded-full blur-lg"></div>
                 <h3 className="font-black text-base mb-2">Sell on BuildMart</h3>
@@ -175,7 +190,7 @@ export default function UserProfile() {
             )}
 
             {/* Admin Notice */}
-            {user.role === 'admin' && (
+            {user?.role === 'admin' && (
               <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-md border border-slate-800">
                 <div className="flex items-center gap-2 mb-3">
                   <Award className="w-5 h-5 text-amber-500" />
@@ -202,8 +217,8 @@ export default function UserProfile() {
               <button
                 onClick={() => setActiveTab('quotes')}
                 className={`pb-3 text-xs font-black uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'quotes'
-                    ? 'border-amber-500 text-amber-500'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                  ? 'border-amber-500 text-amber-500'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
                   }`}
               >
                 <span className="flex items-center gap-2">
@@ -214,8 +229,8 @@ export default function UserProfile() {
               <button
                 onClick={() => setActiveTab('plans')}
                 className={`pb-3 text-xs font-black uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'plans'
-                    ? 'border-amber-500 text-amber-500'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                  ? 'border-amber-500 text-amber-500'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
                   }`}
               >
                 <span className="flex items-center gap-2">

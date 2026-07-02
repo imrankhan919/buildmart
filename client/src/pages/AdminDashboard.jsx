@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import Loader from "../components/common/Loader"
 import { ShieldAlert, Users, Award, ShoppingBag, ShieldCheck, Check, X, Trash2, Ban, Eye, Globe, ChevronRight } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { getUsers } from '../services/adminService';
+import { setStats } from '../features/admin/adminSlice';
 
 export default function AdminDashboard() {
+
+  const dispatch = useDispatch()
+
   const { user } = useSelector(state => state.auth)
+
+  // Access the client
+  const queryClient = useQueryClient()
+
+  // Queries
+  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['users'], queryFn: () => getUsers(user.token) })
+
+  const { users, vendors, products, orders, ratings } = useSelector(state => state.admin)
+
+
   const [activeTab, setActiveTab] = useState('approvals');
   const [toastMessage, setToastMessage] = useState(null);
 
+
+
   // Stats Data
   const adminStats = [
-    { title: 'Registered Users', value: '1,280', icon: <Users className="w-5 h-5 text-blue-500" />, desc: '120 joined this month' },
-    { title: 'Verified Suppliers', value: '84', icon: <Award className="w-5 h-5 text-amber-500" />, desc: '6 awaiting approval' },
-    { title: 'Active Listings', value: '412', icon: <ShoppingBag className="w-5 h-5 text-purple-500" />, desc: '32 categories active' },
-    { title: 'Commission (Mth)', value: '₹1,24,000', icon: <Globe className="w-5 h-5 text-emerald-500" />, desc: '1.5% platform fee net' },
+    { title: 'Registered Users', value: users?.length, icon: <Users className="w-5 h-5 text-blue-500" />, desc: '5 joined this month' },
+    { title: 'Verified Suppliers', value: vendors?.length, icon: <Award className="w-5 h-5 text-amber-500" />, desc: '6 awaiting approval' },
+    { title: 'Active Listings', value: products?.length, icon: <ShoppingBag className="w-5 h-5 text-purple-500" />, desc: '32 categories active' },
+    { title: 'Commission (Mth)', value: orders.reduce((acc, order) => acc + order.totalBillAmount, 0) + '₹', icon: <Globe className="w-5 h-5 text-emerald-500" />, desc: '1.5% platform fee net' },
   ];
 
   // Mock Pending Approvals (Vendors & Listings)
@@ -21,13 +43,7 @@ export default function AdminDashboard() {
     { id: 2, type: 'product_app', name: 'First Class Flyash Bricks', details: 'Category: Bricks • Vendor: Somani Brick Industry • Price: ₹6.5/piece', date: 'June 16, 2026' },
   ]);
 
-  // Mock Vendors
-  const [vendors, setVendors] = useState([
-    { id: 1, businessName: 'Narmada Building Materials', owner: 'Ramesh Khandelwal', location: 'Indore', status: 'Verified' },
-    { id: 2, businessName: 'Khandelwal Iron & Steel', owner: 'Suresh Sharma', location: 'Bhopal', status: 'Verified' },
-    { id: 3, businessName: 'Somany Tiles Plaza', owner: 'Anil Somany', location: 'Mumbai', status: 'Verified' },
-    { id: 4, businessName: 'Shri Ram Brick Kiln', owner: 'Vijay Ram', location: 'Indore', status: 'Pending Verification' },
-  ]);
+
 
   // Mock Global Catalog
   const [catalog, setCatalog] = useState([
@@ -63,7 +79,23 @@ export default function AdminDashboard() {
     triggerToast(`Deleted listing: ${name}`);
   };
 
-  if (user.role !== 'admin') {
+
+  useEffect(() => {
+    if (isSuccess) {
+      dispatch(setStats(data))
+    }
+  }, [data])
+
+
+  if (isLoading) {
+    return (
+      <Loader message="Loading Data" />
+    )
+  }
+
+
+
+  if (!user.isAdmin) {
     return (
       <div className="bg-slate-50 min-h-[70vh] flex items-center justify-center p-4">
         <div className="bg-white border border-slate-100 rounded-3xl p-8 max-w-sm text-center shadow-md">
@@ -123,8 +155,8 @@ export default function AdminDashboard() {
             <button
               onClick={() => setActiveTab('approvals')}
               className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'approvals'
-                  ? 'border-amber-500 text-amber-600'
-                  : 'border-transparent text-slate-450 hover:text-slate-800'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-slate-450 hover:text-slate-800'
                 }`}
             >
               Pending Approvals ({pendingApprovals.length})
@@ -132,8 +164,8 @@ export default function AdminDashboard() {
             <button
               onClick={() => setActiveTab('vendors')}
               className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'vendors'
-                  ? 'border-amber-500 text-amber-600'
-                  : 'border-transparent text-slate-450 hover:text-slate-800'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-slate-450 hover:text-slate-800'
                 }`}
             >
               Suppliers Directory ({vendors.length})
@@ -141,8 +173,8 @@ export default function AdminDashboard() {
             <button
               onClick={() => setActiveTab('catalog')}
               className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'catalog'
-                  ? 'border-amber-500 text-amber-600'
-                  : 'border-transparent text-slate-450 hover:text-slate-800'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-slate-450 hover:text-slate-800'
                 }`}
             >
               Global Catalog ({catalog.length})
@@ -215,8 +247,8 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => toggleVendorStatus(v.id, v.businessName, v.status)}
                           className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${v.status === 'Verified'
-                              ? 'border-red-200 text-red-700 hover:bg-red-50'
-                              : 'border-green-200 text-green-700 hover:bg-green-50'
+                            ? 'border-red-200 text-red-700 hover:bg-red-50'
+                            : 'border-green-200 text-green-700 hover:bg-green-50'
                             }`}
                         >
                           {v.status === 'Verified' ? 'Suspend' : 'Verify'}
