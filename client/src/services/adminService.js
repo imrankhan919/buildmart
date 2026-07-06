@@ -17,6 +17,23 @@ export const getUsers = async (token) => {
 }
 
 
+export const updateVendor = async (payload) => {
+
+
+    let options = {
+        headers: {
+            authorization: `Bearer ${payload.token}`
+        }
+    }
+
+
+
+    const response = await axios.put("/api/admin/vendors/" + payload.vendor, { status: payload.status }, options)
+    return response.data
+}
+
+
+
 export const getProducts = async () => {
     console.log("Getting Products...")
 }

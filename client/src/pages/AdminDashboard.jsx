@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
+  useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
 import Loader from "../components/common/Loader"
 import { ShieldAlert, Users, Award, ShoppingBag, ShieldCheck, Check, X, Trash2, Ban, Eye, Globe, ChevronRight } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUsers } from '../services/adminService';
+import { getUsers, updateVendor } from '../services/adminService';
 import { setStats } from '../features/admin/adminSlice';
+import VendorList from '../components/admin/VendorList';
 
 export default function AdminDashboard() {
 
@@ -20,7 +22,6 @@ export default function AdminDashboard() {
 
   // Queries
   const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['users'], queryFn: () => getUsers(user.token) })
-
   const { users, vendors, products, orders, ratings } = useSelector(state => state.admin)
 
 
@@ -37,12 +38,6 @@ export default function AdminDashboard() {
     { title: 'Commission (Mth)', value: orders.reduce((acc, order) => acc + order.totalBillAmount, 0) + '₹', icon: <Globe className="w-5 h-5 text-emerald-500" />, desc: '1.5% platform fee net' },
   ];
 
-  // Mock Pending Approvals (Vendors & Listings)
-  const [pendingApprovals, setPendingApprovals] = useState([
-    { id: 1, type: 'vendor_app', name: 'Kunal Steel Traders', details: 'Specialization: Structural Steel • Location: Indore', date: 'June 15, 2026' },
-    { id: 2, type: 'product_app', name: 'First Class Flyash Bricks', details: 'Category: Bricks • Vendor: Somani Brick Industry • Price: ₹6.5/piece', date: 'June 16, 2026' },
-  ]);
-
 
 
   // Mock Global Catalog
@@ -58,15 +53,7 @@ export default function AdminDashboard() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  const handleApprove = (id, name) => {
-    setPendingApprovals(prev => prev.filter(item => item.id !== id));
-    triggerToast(`Approved: ${name}`);
-  };
 
-  const handleReject = (id, name) => {
-    setPendingApprovals(prev => prev.filter(item => item.id !== id));
-    triggerToast(`Rejected: ${name}`);
-  };
 
   const toggleVendorStatus = (id, businessName, currentStatus) => {
     const nextStatus = currentStatus === 'Verified' ? 'Suspended' : 'Verified';
@@ -159,7 +146,7 @@ export default function AdminDashboard() {
                 : 'border-transparent text-slate-450 hover:text-slate-800'
                 }`}
             >
-              Pending Approvals ({pendingApprovals.length})
+              Pending Approvals ({vendors.filter(vendor => vendor.status === "pending").length})
             </button>
             <button
               onClick={() => setActiveTab('vendors')}
@@ -184,36 +171,11 @@ export default function AdminDashboard() {
           {/* Pending Approvals Tab View */}
           {activeTab === 'approvals' && (
             <div className="space-y-4">
-              {pendingApprovals.length === 0 ? (
+              {vendors.filter(vendor => vendor.status === "pending").length === 0 ? (
                 <div className="text-center py-10 text-slate-405 font-medium">No pending verification queues.</div>
               ) : (
-                pendingApprovals.map((item) => (
-                  <div key={item.id} className="border border-slate-100 bg-slate-50/50 rounded-2xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <div className="space-y-1.5">
-                      <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-md border ${item.type === 'vendor_app' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-purple-50 text-purple-700 border-purple-200'}`}>
-                        {item.type === 'vendor_app' ? 'Vendor Application' : 'Material Listing Approval'}
-                      </span>
-                      <h4 className="font-extrabold text-slate-900 text-sm mt-1">{item.name}</h4>
-                      <p className="text-xs text-slate-500">{item.details}</p>
-                    </div>
-
-                    <div className="flex gap-2 shrink-0">
-                      <button
-                        onClick={() => handleApprove(item.id, item.name)}
-                        className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition-colors"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Approve</span>
-                      </button>
-                      <button
-                        onClick={() => handleReject(item.id, item.name)}
-                        className="flex items-center gap-1 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-2 rounded-xl text-xs transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Deny</span>
-                      </button>
-                    </div>
-                  </div>
+                vendors.filter(vendor => vendor.status === "pending").map((item) => (
+                  <VendorList item={item} user={user} />
                 ))
               )}
             </div>

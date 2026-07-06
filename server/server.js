@@ -1,3 +1,7 @@
+import dns from "dns"
+dns.setDefaultResultOrder('ipv4first');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 import express from "express"
 import colors from "colors"
 import dotenv from "dotenv"

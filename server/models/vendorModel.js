@@ -32,7 +32,7 @@ const vendorSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ["active", "pending", "suspended", "hold"],
+        enum: ["active", "pending", "rejected"],
         default: "pending"
     }
 }, {
