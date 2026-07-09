@@ -10,19 +10,21 @@ const becomeVendor = async (req, res) => {
     const userId = req.user._id
 
     // Check if already requested
-    const vendorExists = await Vendor.findOne({ user: userId })
+    const vendorExists = await Vendor.findById(userId).populate("user")
 
-    if (vendorExists.status === "rejected") {
+
+
+    if (vendorExists?.status === "rejected") {
         res.status(409)
         throw new Error("Can't Request Your Profile Is Rejected!")
     }
 
-    if (vendorExists.status === "active") {
+    if (vendorExists?.status === "active") {
         res.status(409)
         throw new Error("Already Active Profile No Need To Request Again!")
     }
 
-    if (vendorExists.status === "pending") {
+    if (vendorExists?.status === "pending") {
         res.status(409)
         throw new Error("Already Requested Wait For Approval!")
     }

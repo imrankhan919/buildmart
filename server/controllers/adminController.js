@@ -21,7 +21,7 @@ const updateUser = async (req, res) => {
 
 const getAllVendors = async (req, res) => {
 
-    const vendors = await Vendor.find()
+    const vendors = await Vendor.find().populate("user")
 
     if (!vendors) {
         res.status(404)

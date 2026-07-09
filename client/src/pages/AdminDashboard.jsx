@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getUsers, updateVendor } from '../services/adminService';
 import { setStats } from '../features/admin/adminSlice';
 import VendorList from '../components/admin/VendorList';
+import AllVendorList from '../components/admin/AllVendorList';
 
 export default function AdminDashboard() {
 
@@ -25,7 +26,7 @@ export default function AdminDashboard() {
   const { users, vendors, products, orders, ratings } = useSelector(state => state.admin)
 
 
-  const [activeTab, setActiveTab] = useState('approvals');
+  const [activeTab, setActiveTab] = useState('users');
   const [toastMessage, setToastMessage] = useState(null);
 
 
@@ -40,31 +41,8 @@ export default function AdminDashboard() {
 
 
 
-  // Mock Global Catalog
-  const [catalog, setCatalog] = useState([
-    { id: 1, name: 'UltraTech Premium OPC 53 Grade Cement', category: 'Cement', price: 420, unit: 'bag', vendor: 'Narmada Materials', status: 'Active' },
-    { id: 2, name: 'Kamdhenu Fe-550 TMT Steel Rebars', category: 'Steel', price: 58, unit: 'kg', vendor: 'Khandelwal Steel', status: 'Active' },
-    { id: 3, name: 'Modular Glazed Vitrified Tiles (2x2 ft)', category: 'Tiles', price: 45, unit: 'sqft', vendor: 'Somany Tiles', status: 'Active' },
-    { id: 4, name: 'Premium Red Clay Wall Bricks (First Class)', category: 'Bricks', price: 8, unit: 'piece', vendor: 'Shri Ram Bricks', status: 'Active' },
-  ]);
-
-  const triggerToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
 
-
-  const toggleVendorStatus = (id, businessName, currentStatus) => {
-    const nextStatus = currentStatus === 'Verified' ? 'Suspended' : 'Verified';
-    setVendors(prev => prev.map(v => v.id === id ? { ...v, status: nextStatus } : v));
-    triggerToast(`${businessName} is now ${nextStatus}`);
-  };
-
-  const handleDeleteListing = (id, name) => {
-    setCatalog(prev => prev.filter(item => item.id !== id));
-    triggerToast(`Deleted listing: ${name}`);
-  };
 
 
   useEffect(() => {
@@ -149,22 +127,22 @@ export default function AdminDashboard() {
               Pending Approvals ({vendors.filter(vendor => vendor.status === "pending").length})
             </button>
             <button
+              onClick={() => setActiveTab('users')}
+              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'users'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-slate-450 hover:text-slate-800'
+                }`}
+            >
+              All Users ({users.length})
+            </button>
+            <button
               onClick={() => setActiveTab('vendors')}
               className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'vendors'
                 ? 'border-amber-500 text-amber-600'
                 : 'border-transparent text-slate-450 hover:text-slate-800'
                 }`}
             >
-              Suppliers Directory ({vendors.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('catalog')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'catalog'
-                ? 'border-amber-500 text-amber-600'
-                : 'border-transparent text-slate-450 hover:text-slate-800'
-                }`}
-            >
-              Global Catalog ({catalog.length})
+              All Vendors ({vendors.length})
             </button>
           </div>
 
@@ -189,6 +167,7 @@ export default function AdminDashboard() {
                   <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-450">
                     <th className="pb-3">Business Name</th>
                     <th className="pb-3">Owner</th>
+                    <th className="pb-3">Category</th>
                     <th className="pb-3">Location</th>
                     <th className="pb-3">Licensing Status</th>
                     <th className="pb-3 text-right">Actions</th>
@@ -197,23 +176,23 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-slate-100">
                   {vendors.map((v) => (
                     <tr key={v.id} className="hover:bg-slate-50/50">
-                      <td className="py-4 font-bold text-slate-900 pr-4">{v.businessName}</td>
-                      <td className="py-4 text-slate-500 font-semibold">{v.owner}</td>
-                      <td className="py-4 text-slate-500 font-medium">{v.location}</td>
+                      <td className="py-4 font-bold text-slate-900 pr-4">{v.name}</td>
+                      <td className="py-4 text-slate-500 font-semibold">{v.user.name}</td>
+                      <td className="py-4 text-slate-500 font-semibold">{v.category}</td>
+                      <td className="py-4 text-slate-500 font-medium">{v.address}</td>
                       <td className="py-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${v.status === 'Verified' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${v.status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                           {v.status}
                         </span>
                       </td>
                       <td className="py-4 text-right">
                         <button
-                          onClick={() => toggleVendorStatus(v.id, v.businessName, v.status)}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${v.status === 'Verified'
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${v.status === 'active'
                             ? 'border-red-200 text-red-700 hover:bg-red-50'
                             : 'border-green-200 text-green-700 hover:bg-green-50'
                             }`}
                         >
-                          {v.status === 'Verified' ? 'Suspend' : 'Verify'}
+                          {v.status === 'active' ? 'Suspend' : 'Verify'}
                         </button>
                       </td>
                     </tr>
@@ -224,37 +203,9 @@ export default function AdminDashboard() {
           )}
 
           {/* Global Catalog Tab View */}
-          {activeTab === 'catalog' && (
+          {activeTab === 'users' && (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-450">
-                    <th className="pb-3">Material Name</th>
-                    <th className="pb-3">Category</th>
-                    <th className="pb-3">Price</th>
-                    <th className="pb-3">Supplier Shop</th>
-                    <th className="pb-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {catalog.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50">
-                      <td className="py-4 font-bold text-slate-900 pr-4">{item.name}</td>
-                      <td className="py-4 text-slate-500 font-bold">{item.category}</td>
-                      <td className="py-4 font-extrabold text-slate-800">₹{item.price} <span className="text-[10px] font-normal text-slate-400">/{item.unit}</span></td>
-                      <td className="py-4 text-slate-500 font-semibold">{item.vendor}</td>
-                      <td className="py-4 text-right">
-                        <button
-                          onClick={() => handleDeleteListing(item.id, item.name)}
-                          className="p-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-600 rounded-xl text-slate-400 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <AllVendorList users={users} />
             </div>
           )}
 
