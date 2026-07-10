@@ -15,9 +15,6 @@ const getAllUsers = async (req, res) => {
     res.status(200).json(users)
 }
 
-const updateUser = async (req, res) => {
-    res.send("Update User")
-}
 
 const getAllVendors = async (req, res) => {
 
@@ -71,6 +68,31 @@ const updateVendor = async (req, res) => {
 }
 
 
+const updateUser = async (req, res) => {
+
+    const userId = req.params.uid
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        res.status(404)
+        throw new Error("user not found!")
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, { isActive: !user.isActive }, { new: true })
+
+    if (!updatedUser) {
+        res.status(409)
+        throw new Error("User Not Updated!")
+    }
+
+    res.status(200).json(updatedUser)
+
+}
+
+
+
+
 const getAllProducts = async (req, res) => {
     const products = await Product.find()
 
@@ -99,8 +121,17 @@ const getAllOrders = async (req, res) => {
 }
 
 
-const getAllRatings = async (req, res) => {
-    res.send("All Ratings Here")
+const getAllCreditRequests = async (req, res) => {
+    const creditRequests = await CreditRequest.find()
+
+    if (!creditRequests) {
+        res.status(404)
+        throw new Error("Credit Requests Not Found!")
+    }
+
+
+
+    res.status(200).json(creditRequests)
 }
 
 const updateCredits = async (req, res) => {
@@ -144,6 +175,6 @@ const updateCredits = async (req, res) => {
 
 
 
-const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllRatings, getAllVendors, updateUser, updateVendor, updateCredits }
+const adminController = { getAllUsers, getAllOrders, getAllProducts, getAllCreditRequests, getAllVendors, updateUser, updateVendor, updateCredits, updateUser }
 
 export default adminController

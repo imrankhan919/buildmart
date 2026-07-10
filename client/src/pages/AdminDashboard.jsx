@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   // Stats Data
   const adminStats = [
     { title: 'Registered Users', value: users?.length, icon: <Users className="w-5 h-5 text-blue-500" />, desc: '5 joined this month' },
-    { title: 'Verified Suppliers', value: vendors?.length, icon: <Award className="w-5 h-5 text-amber-500" />, desc: '6 awaiting approval' },
+    { title: 'Verified Suppliers', value: vendors?.length, icon: <Award className="w-5 h-5 text-amber-500" />, desc: vendors.filter(v => v.status !== "active").length + ' awaiting approval' },
     { title: 'Active Listings', value: products?.length, icon: <ShoppingBag className="w-5 h-5 text-purple-500" />, desc: '32 categories active' },
     { title: 'Commission (Mth)', value: orders.reduce((acc, order) => acc + order.totalBillAmount, 0) + '₹', icon: <Globe className="w-5 h-5 text-emerald-500" />, desc: '1.5% platform fee net' },
   ];

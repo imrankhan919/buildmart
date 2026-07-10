@@ -1,18 +1,37 @@
 import { useMutation } from '@tanstack/react-query';
 import React from 'react'
-import { updateVendor } from '../../services/adminService';
+import { updateUser, updateVendor } from '../../services/adminService';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { setUserUpdate } from '../../features/admin/adminSlice';
+import Loader from '../common/Loader';
 
 const AllVendorList = ({ users }) => {
 
-    const { mutate, data, isPending, isSuccess, isError, error } = useMutation({ mutationFn: (data) => updateVendor(data) })
+    const { user } = useSelector(state => state.auth)
+    const { mutate, data, isPending, isSuccess, isError, error } = useMutation({ mutationFn: (data) => updateUser(data) })
 
-    const handleApprove = (token, id, status) => {
-        mutate({ token: user.token, vendor: id, status: status })
+    const dispatch = useDispatch()
+
+
+
+    const handleUserUpdate = (id) => {
+        mutate({ token: user.token, uid: id })
     };
 
-    const handleReject = (token, id, status) => {
-        mutate({ token: user.token, vendor: id, status: status })
-    };
+
+    useEffect(() => {
+        if (isSuccess) {
+            dispatch(setUserUpdate(data))
+        }
+    }, [data])
+
+
+
+    if (isPending) {
+        return <Loader />
+    }
+
 
 
     return (
@@ -33,7 +52,7 @@ const AllVendorList = ({ users }) => {
                         <td className="py-4 font-extrabold text-slate-800">₹{item.phone}</td>
                         <td className="py-4 text-right">
                             <button
-                                onClick={() => item.isActive ? () => handleReject(user.token, user._id, "rejected") : handleApprove(user.token, user._id, "active")}
+                                onClick={() => handleUserUpdate(item._id)}
                                 className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${item.isActive ? 'border-red-200 text-red-700 hover:bg-red-50'
                                     : 'border-green-200 text-green-700 hover:bg-green-50'
                                     }`}

@@ -149,4 +149,33 @@ const seedUsers = async () => {
     }
 };
 
-seedUsers();
+// seedUsers();
+
+const activateAllUsers = async () => {
+    try {
+        // Connect to MongoDB
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log("✅ MongoDB Connected");
+
+        // Update all users
+        const result = await User.updateMany(
+            {},
+            {
+                $set: {
+                    isActive: true,
+                },
+            }
+        );
+
+        console.log(`✅ ${result.modifiedCount} users activated.`);
+
+        await mongoose.connection.close();
+        console.log("🔌 MongoDB Connection Closed");
+        process.exit(0);
+    } catch (error) {
+        console.error("❌ Error:", error);
+        process.exit(1);
+    }
+};
+
+activateAllUsers();

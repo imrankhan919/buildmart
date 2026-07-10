@@ -33,17 +33,21 @@ export const updateVendor = async (payload) => {
 }
 
 
+export const updateUser = async (payload) => {
 
-export const getProducts = async () => {
-    console.log("Getting Products...")
-}
 
-export const getOrders = async () => {
-    console.log("Getting Orders...")
-}
+    let options = {
+        headers: {
+            authorization: `Bearer ${payload.token}`
+        }
+    }
 
-export const getRatings = async () => {
-    console.log("Getting Ratings...")
+
+
+    const response = await axios.put("/api/admin/users/" + payload.uid, {}, options)
+    return response.data
+
+
 }
 
 
