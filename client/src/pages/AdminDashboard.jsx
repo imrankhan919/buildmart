@@ -11,6 +11,7 @@ import { getUsers, updateVendor } from '../services/adminService';
 import { setStats } from '../features/admin/adminSlice';
 import VendorList from '../components/admin/VendorList';
 import AllVendorList from '../components/admin/AllVendorList';
+import TransactionList from '../components/admin/TransactionList';
 
 export default function AdminDashboard() {
 
@@ -23,10 +24,10 @@ export default function AdminDashboard() {
 
   // Queries
   const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['users'], queryFn: () => getUsers(user.token) })
-  const { users, vendors, products, orders, ratings } = useSelector(state => state.admin)
+  const { users, vendors, products, orders, ratings, credits } = useSelector(state => state.admin)
 
 
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('credits');
   const [toastMessage, setToastMessage] = useState(null);
 
 
@@ -118,6 +119,15 @@ export default function AdminDashboard() {
           {/* Tab Headers */}
           <div className="border-b border-slate-150 flex gap-6 pb-0.5">
             <button
+              onClick={() => setActiveTab('credits')}
+              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'credits'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-slate-450 hover:text-slate-800'
+                }`}
+            >
+              Credits History ({credits.filter(credit => !credit.isGranted).length})
+            </button>
+            <button
               onClick={() => setActiveTab('approvals')}
               className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'approvals'
                 ? 'border-amber-500 text-amber-600'
@@ -145,6 +155,16 @@ export default function AdminDashboard() {
               All Vendors ({vendors.length})
             </button>
           </div>
+
+
+          {/* Global Catalog Tab View */}
+          {activeTab === 'credits' && (
+            <div className="overflow-x-auto">
+              <TransactionList credits={credits} />
+            </div>
+          )}
+
+
 
           {/* Pending Approvals Tab View */}
           {activeTab === 'approvals' && (

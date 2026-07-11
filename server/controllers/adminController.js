@@ -122,7 +122,7 @@ const getAllOrders = async (req, res) => {
 
 
 const getAllCreditRequests = async (req, res) => {
-    const creditRequests = await CreditRequest.find()
+    const creditRequests = await CreditRequest.find().populate('user')
 
     if (!creditRequests) {
         res.status(404)
@@ -131,7 +131,7 @@ const getAllCreditRequests = async (req, res) => {
 
 
 
-    res.status(200).json(creditRequests)
+    res.status(200).json(creditRequests.reverse())
 }
 
 const updateCredits = async (req, res) => {
@@ -155,7 +155,7 @@ const updateCredits = async (req, res) => {
         throw new Error("Credit Request Not Found!")
     }
 
-    const updatedRequest = await CreditRequest.findByIdAndUpdate(requestId, { isGranted: status })
+    const updatedRequest = await CreditRequest.findByIdAndUpdate(requestId, { isGranted: status }, { new: true }).populate('user')
 
 
     if (status) {

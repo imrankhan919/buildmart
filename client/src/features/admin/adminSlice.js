@@ -5,7 +5,8 @@ const initialState = {
     vendors: [],
     products: [],
     orders: [],
-    ratings: []
+    ratings: [],
+    credits: []
 }
 
 const adminSlice = createSlice({
@@ -23,10 +24,16 @@ const adminSlice = createSlice({
                 ...state,
                 users: state.users.map(user => user._id === action.payload._id ? action.payload : user)
             }
+        },
+        setCreditsUpdate: (state, action) => {
+            return {
+                ...state,
+                credits: state.credits.map(credit => credit._id === action.payload._id ? action.payload : credit)
+            }
         }
     }
 });
 
-export const { setStats, setUserUpdate } = adminSlice.actions
+export const { setStats, setUserUpdate, setCreditsUpdate } = adminSlice.actions
 
 export default adminSlice.reducer

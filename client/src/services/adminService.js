@@ -12,7 +12,8 @@ export const getUsers = async (token) => {
     const vendors = await axios.get("/api/admin/vendors", options)
     const products = await axios.get("/api/admin/products", options)
     const orders = await axios.get("/api/admin/orders", options)
-    const data = { users: users.data, vendors: vendors.data, products: products.data, orders: orders.data }
+    const credits = await axios.get("/api/admin/credits", options)
+    const data = { users: users.data, vendors: vendors.data, products: products.data, orders: orders.data, credits: credits.data }
     return data
 }
 
@@ -51,3 +52,20 @@ export const updateUser = async (payload) => {
 }
 
 
+
+export const updateCredits = async (payload) => {
+
+
+    let options = {
+        headers: {
+            authorization: `Bearer ${payload.token}`
+        }
+    }
+
+
+
+    const response = await axios.put("/api/admin/credits/" + payload.rid, { isGranted: payload.status }, options)
+    return response.data
+
+
+}
