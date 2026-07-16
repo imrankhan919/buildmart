@@ -1,37 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, MapPin, Building, ShieldCheck, ShoppingCart, MessageSquare, Plus, Minus, ArrowLeft } from 'lucide-react';
 import ProductCard from '../components/marketplace/ProductCard';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getProduct } from '../services/productService';
+import { setProduct } from '../features/products/productSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import Loader from '../components/common/Loader';
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const dispatch = useDispatch()
+
+  const { product } = useSelector(state => state.product)
+  // Access the client
+  const queryClient = useQueryClient()
+
+  // Queries
+  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['product'], queryFn: () => getProduct(id) })
+
+
   const [quantity, setQuantity] = useState(50);
   const [showNotification, setShowNotification] = useState(null);
 
-  // Mock product fetch based on ID or fallback
-  const product = {
-    id: id || 1,
-    name: 'UltraTech Premium OPC 53 Grade Cement',
-    category: 'Cement',
-    price: 420,
-    unit: 'bag',
-    vendorName: 'Narmada Building Materials',
-    vendorId: 2,
-    location: 'Indore',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=600&auto=format&fit=crop',
-    minOrderQty: 50,
-    availability: 'In Stock',
-    description: 'UltraTech Cement is India’s No. 1 cement. UltraTech Premium is a concrete special cement manufactured in state-of-the-art plants. It is a composite cement that produces high-durability concrete which is highly resistant to chemical attacks. Perfect for structural columns, beams, slabs, and foundation footings.',
-    specs: [
-      { name: 'Material Grade', value: 'OPC 53 Grade' },
-      { name: 'Net Weight', value: '50 kg per bag' },
-      { name: 'Dimensions', value: '60 × 40 × 12 cm' },
-      { name: 'Compressive Strength', value: '53 MPa (Min at 28 Days)' },
-      { name: 'Soundness', value: '1.2 mm (Le-Chatelier)' },
-      { name: 'Initial Setting Time', value: '45 mins' },
-    ]
-  };
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      dispatch(setProduct(data))
+    }
+  }, [isSuccess, data])
 
   // Mock related products (3 items)
   const relatedProducts = [
@@ -86,6 +83,12 @@ export default function ProductDetail() {
     }, 2500);
   };
 
+  if (isLoading || !product) {
+    return (
+      <Loader />
+    )
+  }
+
   return (
     <div className="bg-slate-50 min-h-screen py-10 relative">
       {/* Toast Notification */}
@@ -97,7 +100,7 @@ export default function ProductDetail() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Back Link */}
         <Link to="/marketplace" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -106,22 +109,22 @@ export default function ProductDetail() {
 
         {/* Product Details Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm mb-12">
-          
+
           {/* Left Panel: Large Image */}
           <div className="lg:col-span-5 space-y-4">
             <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 relative">
               <img
-                src={product.image}
-                alt={product.name}
+                src={product?.image}
+                alt={product?.name}
                 className="w-full h-full object-cover"
               />
               <span className="absolute top-4 right-4 bg-green-50 text-green-700 border border-green-200 text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm">
-                {product.availability}
+                {product.stock > 0 ? "Available" : "Out of stock"}
               </span>
             </div>
             <div className="flex gap-4">
               <div className="aspect-[4/3] w-24 rounded-xl overflow-hidden border border-amber-500 bg-slate-100">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                <img src={product?.image} alt={product.name} className="w-full h-full object-cover" />
               </div>
               <div className="aspect-[4/3] w-24 rounded-xl overflow-hidden border border-slate-200 opacity-60 hover:opacity-100 transition-opacity bg-slate-100 cursor-pointer">
                 <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
@@ -150,7 +153,7 @@ export default function ProductDetail() {
                 </div>
                 <div className="flex items-center gap-1 text-slate-500">
                   <MapPin className="w-4 h-4 text-slate-400" />
-                  <span>{product.location}</span>
+                  <span>{product?.vendor?.address}</span>
                 </div>
               </div>
             </div>
@@ -160,10 +163,10 @@ export default function ProductDetail() {
               <div>
                 <span className="text-xs text-slate-400 block font-medium">Bulk Supply Price</span>
                 <div className="text-3xl font-black text-slate-900 mt-1">
-                  ₹{product.price} <span className="text-sm font-medium text-slate-500">/ {product.unit}</span>
+                  ₹{product.price} <span className="text-sm font-medium text-slate-500">/ 1 Piece</span>
                 </div>
               </div>
-              
+
               {/* Interactive Quantity Selection */}
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-slate-500">Order Quantity ({product.unit}s)</span>
@@ -222,12 +225,10 @@ export default function ProductDetail() {
             <h3 className="font-extrabold text-slate-950 text-base mb-6 border-b border-slate-100 pb-3">Technical Specifications</h3>
             <table className="w-full text-sm text-left">
               <tbody className="divide-y divide-slate-100">
-                {product.specs.map((spec, index) => (
-                  <tr key={index} className="hover:bg-slate-50/50">
-                    <td className="py-3 font-bold text-slate-500 w-1/3 pr-4">{spec.name}</td>
-                    <td className="py-3 text-slate-800 font-medium">{spec.value}</td>
-                  </tr>
-                ))}
+                <tr className="hover:bg-slate-50/50">
+                  <td className="py-3 font-bold text-slate-500 w-1/3 pr-4">Red Brick</td>
+                  <td className="py-3 text-slate-800 font-medium">Building Material</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -238,27 +239,27 @@ export default function ProductDetail() {
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Verified Vendor</span>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-base shadow-sm">
-                  NB
+                  {product?.vendor?.name[0]}
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-slate-950 text-sm">{product.vendorName}</h4>
+                  <h4 className="font-extrabold text-slate-950 text-sm">{product.vendor.name}</h4>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                    <span className="text-xs font-bold text-slate-700">{product.rating}</span>
+                    <span className="text-xs font-bold text-slate-700">5.0</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-slate-500 text-xs">
                 <MapPin className="w-4 h-4 text-slate-400" />
-                <span>Shop #402, Loha Mandi, {product.location}</span>
+                <span>{product.vendor.address}</span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed pt-2">
                 Delivering high-quality building material options across central India for 12+ years. 100% genuine supply guaranteed.
               </p>
             </div>
-            
+
             <Link
-              to={`/vendors/${product.vendorId}`}
+              to={`/vendors/${product.vendor._id}`}
               className="mt-6 w-full flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors"
             >
               View Vendor Profile

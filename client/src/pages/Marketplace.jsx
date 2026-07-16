@@ -7,25 +7,30 @@ import { Search, SlidersHorizontal, Grid, ArrowUpDown } from 'lucide-react';
 import FilterPanel from '../components/marketplace/FilterPanel';
 import ProductCard from '../components/marketplace/ProductCard';
 import { getAllProducts } from '../services/productService';
+import { useDispatch, useSelector } from 'react-redux';
+import { setProducts } from '../features/products/productSlice';
 
 export default function Marketplace() {
+
+  const dispatch = useDispatch()
+
+  const { products } = useSelector(state => state.product)
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
-  // Hardcoded 8 dummy products
-  const [products, setProducts] = useState([]);
 
   // Access the client
   const queryClient = useQueryClient()
 
   // Queries
-  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['todos'], queryFn: getAllProducts })
+  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['products'], queryFn: getAllProducts })
 
   useEffect(() => {
-    if (isSuccess) {
-      setProducts(data)
+    if (isSuccess && data) {
+      dispatch(setProducts(data))
     }
-  }, [])
+  }, [isSuccess, data])
 
   return (
     <div className="bg-slate-50 min-h-screen py-10">
@@ -100,7 +105,7 @@ export default function Marketplace() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product._id} product={product} />
                   ))}
                 </div>
               </div>

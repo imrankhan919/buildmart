@@ -1,35 +1,31 @@
-// vendorService.js
-// BASE_URL = 'http://localhost:5000/api'
+import axios from "axios";
 
-/**
- * Get all vendors.
- * @returns {Promise<array>} list of vendors
- */
 export const getVendors = async () => {
-  // apiService.get('/vendors')
-  console.log('vendorService.getVendors called');
-  return [];
+  const response = await axios.get("/api/vendor/profiles")
+  return response.data
 };
 
-/**
- * Get vendor details by ID (including their products).
- * @param {string} id
- * @returns {Promise<object>} vendor details
- */
-export const getVendorById = async (id) => {
-  // apiService.get(`/vendors/${id}`)
-  console.log('vendorService.getVendorById called for ID:', id);
-  return null;
+export const getVendor = async (id) => {
+  const response = await axios.get("/api/vendor/profiles/" + id)
+  console.log(response.data)
+  return response.data
+
 };
 
-/**
- * Update vendor profile details.
- * @param {string} id
- * @param {object} data
- * @returns {Promise<object>} updated profile
- */
-export const updateVendorProfile = async (id, data) => {
-  // apiService.put(`/vendors/${id}`, data)
-  console.log('vendorService.updateVendorProfile called for ID:', id, 'with:', data);
-  return { success: true };
-};
+export const getVendorData = async (token) => {
+
+  const options = {
+    headers: {
+      authorization: `Bearer ${token}`
+    }
+  }
+
+  const productsData = await axios.get("/api/vendor/product", options)
+  const ordersData = await axios.get("/api/vendor/orders", options)
+
+  const data = { products: productsData.data, orders: ordersData.data }
+
+  console.log(data)
+
+  return data
+}

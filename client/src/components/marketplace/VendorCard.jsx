@@ -4,13 +4,12 @@ import { Star, MapPin, Package, Award } from 'lucide-react';
 
 export default function VendorCard({ vendor }) {
   const {
-    id,
+    _id,
     name,
-    businessName,
-    location,
+    address,
     rating,
     totalProducts,
-    specialization = [],
+    category,
     image,
   } = vendor;
 
@@ -24,36 +23,26 @@ export default function VendorCard({ vendor }) {
       .toUpperCase();
   };
 
-  // Avatar Gradient Colors
-  const gradients = [
-    'from-blue-500 to-indigo-600',
-    'from-amber-500 to-orange-600',
-    'from-emerald-500 to-teal-600',
-    'from-rose-500 to-pink-600',
-    'from-violet-500 to-purple-600',
-  ];
-  // Select a consistent gradient based on the vendor ID
-  const selectedGradient = gradients[id % gradients.length];
 
   return (
     <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1">
       {/* Header Info */}
       <div className="flex items-start gap-4 mb-4">
         {/* Avatar */}
-        <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-white font-extrabold text-lg bg-gradient-to-br ${selectedGradient} shadow-md flex-shrink-0`}>
-          {getInitials(businessName)}
+        <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-white font-extrabold text-lg bg-amber-700 shadow-md flex-shrink-0`}>
+          {getInitials(name)}
         </div>
-        
+
         {/* Name details */}
         <div className="min-w-0 flex-grow">
           <div className="flex items-center gap-1.5 mb-0.5">
             <h3 className="font-extrabold text-slate-950 text-base leading-tight truncate">
-              {businessName}
+              {name}
             </h3>
             <Award className="w-4 h-4 text-amber-500 flex-shrink-0" />
           </div>
           <p className="text-xs text-slate-400 font-medium mb-1.5">Owner: {name}</p>
-          
+
           {/* Rating */}
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-0.5 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-lg">
@@ -71,28 +60,25 @@ export default function VendorCard({ vendor }) {
       {/* Location */}
       <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-4">
         <MapPin className="w-4 h-4 text-slate-400" />
-        <span>{location}</span>
+        <span>{address}</span>
       </div>
 
       {/* Specializations Tags */}
       <div className="mb-6 flex-grow">
         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">Specializes In</span>
         <div className="flex flex-wrap gap-1.5">
-          {specialization.map((spec, index) => (
-            <span
-              key={index}
-              className="text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200/60 px-2 py-0.5 rounded-md"
-            >
-              {spec}
-            </span>
-          ))}
+          <span
+            className="text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200/60 px-2 py-0.5 rounded-md"
+          >
+            {category}
+          </span>
         </div>
       </div>
 
       {/* View Profile Action */}
       <div className="pt-4 border-t border-slate-50">
         <Link
-          to={`/vendors/${id}`}
+          to={`/vendors/${_id}`}
           className="w-full flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors tracking-wide"
         >
           View Profile

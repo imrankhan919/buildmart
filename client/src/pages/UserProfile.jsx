@@ -79,6 +79,10 @@ export default function UserProfile() {
       navigate("/admin")
     }
 
+    if (user?.isVendor) {
+      navigate("/dashboard")
+    }
+
     if (!user) {
       navigate("/login")
     }

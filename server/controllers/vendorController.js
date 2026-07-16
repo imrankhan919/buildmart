@@ -173,14 +173,24 @@ const getVendor = async (req, res) => {
 
     const vendor = await Vendor.findById(vendorId).populate('user')
 
+    const products = await Product.find({ vendor: vendor._id }).populate('vendor')
+
+    if (!products) {
+        res.status(404)
+        throw new Error("No Products Found!")
+    }
+
     if (!vendor || !vendor.status === "active") {
         res.status(404)
         throw new Error("Vendor Not Found!")
     }
 
 
+    res.status(200).json({
+        vendor: vendor,
+        products: products
+    })
 
-    res.status(200).json(vendor)
 
 }
 

@@ -1,58 +1,43 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LayoutDashboard, ShoppingBag, Plus, FileText, Settings, Award, Eye, MessageSquare, Star, Trash2, Edit3, X, Download, Calendar } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getVendorData } from '../services/vendorService';
+import { useDispatch, useSelector } from 'react-redux';
+import { setVendorProducts, setVendorProfile } from '../features/vendor/vendorSlice';
 
 export default function Dashboard() {
+
+
+  const { user } = useSelector(state => state.auth)
+  const { products, orders } = useSelector(state => state.vendor)
+
+  let token = user.token
+
+  const dispatch = useDispatch()
+
+  // Access the client
+  const queryClient = useQueryClient()
+
+  // Queries
+  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['products'], queryFn: () => getVendorData(token) })
+
+
+
+
+
+
   const [activeTab, setActiveTab] = useState('overview');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(null);
 
   // Stats Card Data
   const stats = [
-    { title: 'Total Products', value: '12', icon: <ShoppingBag className="w-5 h-5 text-blue-500" />, desc: '4 categories live' },
-    { title: 'Total Views', value: '340', icon: <Eye className="w-5 h-5 text-purple-500" />, desc: '+15% this week' },
-    { title: 'Quote Requests', value: '8', icon: <MessageSquare className="w-5 h-5 text-amber-500" />, desc: '3 pending replies' },
+    { title: 'Total Products', value: products?.length, icon: <ShoppingBag className="w-5 h-5 text-blue-500" />, desc: '4 categories live' },
+    { title: 'Orders', value: orders?.length, icon: <Eye className="w-5 h-5 text-purple-500" />, desc: '+15% this week' },
+    { title: 'Total Revenue', value: '8', icon: <MessageSquare className="w-5 h-5 text-amber-500" />, desc: '3 pending replies' },
     { title: 'Avg Rating', value: '4.5', icon: <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />, desc: 'From 24 reviews' },
   ];
 
-  // My Products Table Data (4 items)
-  const products = [
-    {
-      id: 1,
-      name: 'UltraTech Premium OPC 53 Grade Cement',
-      category: 'Cement',
-      price: 420,
-      unit: 'bag',
-      stockStatus: 'In Stock',
-      image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=100&auto=format&fit=crop',
-    },
-    {
-      id: 2,
-      name: 'Kamdhenu Fe-550 TMT Steel Rebars',
-      category: 'Steel',
-      price: 58,
-      unit: 'kg',
-      stockStatus: 'In Stock',
-      image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=100&auto=format&fit=crop',
-    },
-    {
-      id: 3,
-      name: 'Modular Glazed Vitrified Tiles (2x2 ft)',
-      category: 'Tiles',
-      price: 45,
-      unit: 'sqft',
-      stockStatus: 'Low Stock',
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=100&auto=format&fit=crop',
-    },
-    {
-      id: 4,
-      name: 'Premium Red Clay Wall Bricks (First Class)',
-      category: 'Bricks',
-      price: 8,
-      unit: 'piece',
-      stockStatus: 'In Stock',
-      image: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?q=80&w=100&auto=format&fit=crop',
-    },
-  ];
 
   // Saved Floor Plans (3 items)
   const savedPlans = [
@@ -71,6 +56,16 @@ export default function Dashboard() {
     setIsModalOpen(false);
     handleAction('New Product Listing created successfully (Simulated)');
   };
+
+
+  useEffect(() => {
+
+    if (data && isSuccess) {
+      dispatch(setVendorProfile(data))
+    }
+
+  }, [data, isSuccess])
+
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 relative">
@@ -94,7 +89,7 @@ export default function Dashboard() {
             </button>
             <h3 className="font-extrabold text-slate-950 text-lg mb-2">Add New Product Listing</h3>
             <p className="text-xs text-slate-400 mb-6">Create a new building material listing for buyers to order.</p>
-            
+
             <form onSubmit={handleAddNewProductSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-500 block mb-1.5">Product Name *</label>
@@ -182,7 +177,7 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Dashboard Left Sidebar Navigation */}
           <div className="lg:col-span-3">
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm space-y-1">
@@ -198,11 +193,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
-                  activeTab === 'overview'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${activeTab === 'overview'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span>Overview</span>
@@ -210,11 +204,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => setActiveTab('products')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
-                  activeTab === 'products'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${activeTab === 'products'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <ShoppingBag className="w-4 h-4" />
@@ -235,11 +228,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => setActiveTab('saved-plans')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
-                  activeTab === 'saved-plans'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${activeTab === 'saved-plans'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <FileText className="w-4 h-4" />
@@ -252,11 +244,10 @@ export default function Dashboard() {
 
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
-                  activeTab === 'settings'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${activeTab === 'settings'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <Settings className="w-4 h-4" />
                 <span>Profile Settings</span>
@@ -266,7 +257,7 @@ export default function Dashboard() {
 
           {/* Dashboard Main Content Panel */}
           <div className="lg:col-span-9 space-y-8">
-            
+
             {/* Overview Tab Content */}
             {activeTab === 'overview' && (
               <div className="space-y-8">
