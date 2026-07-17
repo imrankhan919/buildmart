@@ -4,15 +4,25 @@ import PlotInputForm from '../components/floorplan/PlotInputForm';
 import FloorPlanViewer from '../components/floorplan/FloorPlanViewer';
 import RenderViewer from '../components/floorplan/RenderViewer';
 import Loader from '../components/common/Loader';
+import { useMutation } from '@tanstack/react-query';
+import { generateFloorPlan } from '../services/aiService';
+import { useSelector } from 'react-redux';
 
 export default function FloorPlanGenerator() {
+
+  const { user } = useSelector(state => state.auth)
+  // mutation function
+  const { mutate, isError, isPending, error, isSuccess, data } = useMutation({ mutationFn: (data) => generateFloorPlan(data) })
+
+
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
 
   const handleGenerate = (formData) => {
     setIsGenerating(true);
     setGeneratedPlan(null);
-    
+
     // Simulate AI Generation delay
     setTimeout(() => {
       setIsGenerating(false);
@@ -25,12 +35,15 @@ export default function FloorPlanGenerator() {
         notes: formData.notes,
       });
     }, 1500);
+
+    mutate({ token: user.token, formData })
+
   };
 
   return (
     <div className="bg-slate-50 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Title Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/25 px-3.5 py-1.5 rounded-full text-xs font-bold text-amber-600 tracking-wider">
@@ -91,7 +104,7 @@ export default function FloorPlanGenerator() {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Viewers Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FloorPlanViewer
@@ -123,7 +136,7 @@ export default function FloorPlanGenerator() {
               <p className="text-xs text-slate-400">See a pre-generated structural design representing a standard 2 BHK Modern layout.</p>
             </div>
           </div>
-          
+
           <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <FloorPlanViewer length={40} width={30} rooms="2 BHK" layoutStyle="Modern" floors={1} />

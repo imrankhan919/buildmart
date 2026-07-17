@@ -1,11 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Sparkles, ShoppingBag, FileText, ArrowRight, ShieldCheck, Download, Trash2, Calendar, Award } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { User, Mail, Phone, MapPin, Sparkles, ShoppingBag, FileText, ArrowRight, ShieldCheck, Download, Trash2, Calendar, Award, CoinsIcon } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getSavedPlans } from '../services/aiService';
 
 export default function UserProfile() {
   const { user } = useSelector(state => state.auth)
+  const { savedPlans } = useSelector(state => state.profile)
+
+  // Access the client
+  const queryClient = useQueryClient()
+
+  // Queries
+  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['products'], queryFn: () => getSavedPlans(user.token) })
+
+
+
+
   const navigate = useNavigate();
+  const dispatch = useDispatch()
+
   const [activeTab, setActiveTab] = useState('quotes');
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -30,26 +45,6 @@ export default function UserProfile() {
       date: 'June 15, 2026',
       status: 'Pending Vendor Price',
       statusColor: 'bg-amber-50 text-amber-705 border-amber-200',
-    },
-  ];
-
-  // Mock Saved Plans
-  const savedPlans = [
-    {
-      id: 1,
-      plotSize: '40\' × 30\'',
-      floors: 1,
-      rooms: '2 BHK',
-      layoutStyle: 'Vastu',
-      date: 'June 12, 2026',
-    },
-    {
-      id: 2,
-      plotSize: '50\' × 40\'',
-      floors: 2,
-      rooms: '3 BHK',
-      layoutStyle: 'Modern',
-      date: 'June 15, 2026',
     },
   ];
 
@@ -170,8 +165,8 @@ export default function UserProfile() {
                   <span className="text-slate-700 font-bold">{user?.phone}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <MapPin className="w-4.5 h-4.5 text-slate-400" />
-                  <span className="text-slate-650 font-medium">{user?.location}</span>
+                  <CoinsIcon className="w-4.5 h-4.5 text-slate-400" />
+                  <span className="text-slate-650 font-medium">Credits Available : {user?.credits}</span>
                 </div>
               </div>
             </div>

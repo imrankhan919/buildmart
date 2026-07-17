@@ -84,11 +84,10 @@ export default function PlotInputForm({ onGenerate }) {
               key={f}
               type="button"
               onClick={() => setFloors(f)}
-              className={`flex flex-col items-center justify-center py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 ${
-                formData.floors === f
+              className={`flex flex-col items-center justify-center py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 ${formData.floors === f
                   ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-sm'
                   : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <Layers className="w-4 h-4 mb-1" />
               <span>{f} {f === 1 ? 'Floor' : 'Floors'}</span>
@@ -123,11 +122,10 @@ export default function PlotInputForm({ onGenerate }) {
                 key={style}
                 type="button"
                 onClick={() => setStyle(style)}
-                className={`py-2 px-1 rounded-lg border text-center text-xs font-bold transition-all duration-200 ${
-                  formData.layoutStyle === style
+                className={`py-2 px-1 rounded-lg border text-center text-xs font-bold transition-all duration-200 ${formData.layoutStyle === style
                     ? 'border-amber-500 bg-amber-50 text-amber-700'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 {style}
               </button>
