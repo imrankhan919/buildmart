@@ -10,6 +10,7 @@ const router = express.Router()
 router.get("/floor-plan", protect.forUser, generateImageController.getFloorPlans)
 router.post("/floor-plan", protect.forUser, generateImageController.generateFloorPlan)
 router.post("/final-plan/:pid", protect.forUser, generateImageController.generateFinalPlan)
+router.post("/bom/:pid", protect.forUser, generateImageController.generateBOM)
 
 
 export default router

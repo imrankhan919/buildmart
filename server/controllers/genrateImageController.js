@@ -5,8 +5,10 @@ import path from "node:path";
 import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js";
 import GeneratedPlan from "../models/generatedPlanModel.js";
 import User from "../models/userModel.js"
-import { GEMINI_IMAGE_MODEL_2D, GEMINI_IMAGE_MODEL_3D, CREDIT_COST_2D, CREDIT_COST_3D } from "../config/aiModels.js";
+import { GEMINI_IMAGE_MODEL_2D, GEMINI_IMAGE_MODEL_3D, GEMINI_TEXT_MODEL, CREDIT_COST_2D, CREDIT_COST_3D, CREDIT_COST_BOM } from "../config/aiModels.js";
 import { roomListFor, isVastuStyle } from "../utils/planRooms.js";
+import { BOM_CATEGORIES } from "../utils/bomCategories.js";
+import { matchBomItem } from "../utils/bomMatcher.js";
 
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -330,7 +332,122 @@ const generateFinalPlan = async (req, res) => {
 }
 
 
-const generateImageController = { generateFloorPlan, getFloorPlans, generateFinalPlan }
+// Generate Bill of Materials (AI quantity surveyor, text model)
+const generateBOM = async (req, res) => {
+
+    const pid = req.params.pid
+    const userId = req.user._id
+
+    const plan = await GeneratedPlan.findById(pid)
+
+    if (!plan) {
+        res.status(404)
+        throw new Error("Plan Not Exist...")
+    }
+
+    if (plan.user.toString() !== userId.toString()) {
+        res.status(403)
+        throw new Error("Not authorised to access this plan")
+    }
+
+    const user = await User.findById(userId)
+
+    // CREDIT_COST_BOM is the tunable constant (currently 1 credit: single text
+    // completion, not image generation). Costs live in server/config/aiModels.js.
+    if (req.user.credits >= CREDIT_COST_BOM) {
+
+        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - CREDIT_COST_BOM }, { new: true })
+
+        const builtUpArea = (Number(plan.plotLength) || 0) * (Number(plan.plotWidth) || 0) * 0.9 * (Number(plan.floors) || 1)
+
+        const prompt = `You are a quantity surveyor for residential construction in India, following Indian NBC standards.
+Given the house below, produce a realistic bill of materials scaled to its size. Cover structural materials (cement, steel/TMT bars, bricks, sand, aggregate), finishing (tiles, paint, wood for doors/windows), utilities (electrical wiring, plumbing pipes), and roofing.
+
+House:
+- Plot: ${plan.plotLength} ft x ${plan.plotWidth} ft (approx ${Math.round(builtUpArea)} sq ft built-up area across ${plan.floors} floor(s))
+- Configuration: ${plan.rooms}, style: ${plan.layoutStyle}
+- Client notes: ${plan.notes || "none"}
+
+Rules:
+- "category" MUST be exactly one of: ${BOM_CATEGORIES.join(", ")}.
+- Quantities must be realistic numbers for the built-up area above (cement in 50kg bags, steel in kg, bricks in pieces, sand/aggregate in cubic feet or brass, tiles in sq.ft, paint in litres, wiring in metres/coils, pipes in metres, wood in cubic feet, roofing sheets in pieces).
+- "assumptions" is one short paragraph summarising the construction assumptions you made (e.g. load-bearing vs framed structure, finish level).`
+
+        const response = await ai.models.generateContent({
+            model: GEMINI_TEXT_MODEL,
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "object",
+                    properties: {
+                        assumptions: { type: "string" },
+                        items: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    category: { type: "string" },
+                                    item: { type: "string" },
+                                    quantity: { type: "number" },
+                                    unit: { type: "string" },
+                                    notes: { type: "string" },
+                                },
+                                required: ["category", "item", "quantity", "unit"],
+                            },
+                        },
+                    },
+                    required: ["assumptions", "items"],
+                },
+            },
+        });
+
+        // Strip code fences defensively; some SDK versions wrap JSON output.
+        const rawText = String(response.text || "").replace(/```json|```/g, "").trim();
+        let parsed;
+        try {
+            parsed = JSON.parse(rawText);
+        } catch (parseError) {
+            console.error("BOM JSON parse failed:", parseError?.message);
+            res.status(409)
+            throw new Error("Could not generate bill of materials, please retry")
+        }
+
+        const items = [];
+        for (const entry of parsed.items || []) {
+            const matches = await matchBomItem({ category: entry.category, item: entry.item });
+            items.push({
+                category: entry.category,
+                item: entry.item,
+                quantity: Number(entry.quantity) || 0,
+                unit: entry.unit || "",
+                notes: entry.notes || "",
+                available: matches.length > 0,
+                matches,
+            });
+        }
+
+        const updatedPlan = await GeneratedPlan.findByIdAndUpdate(
+            pid,
+            { billOfMaterials: { generatedAt: new Date(), assumptions: parsed.assumptions || "", items } },
+            { new: true }
+        );
+
+        if (!updatedPlan) {
+            res.status(409)
+            throw new Error("Plan Not Updated!")
+        }
+
+        res.status(200).json(updatedPlan)
+    } else {
+        res.status(409)
+        throw new Error("Not Sufficient Credits")
+    }
+
+}
+
+
+const generateImageController = { generateFloorPlan, getFloorPlans, generateFinalPlan, generateBOM }
 
 
 export default generateImageController

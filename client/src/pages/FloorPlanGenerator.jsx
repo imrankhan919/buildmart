@@ -5,9 +5,10 @@ import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast, getErrorMessage } from '../components/common/Toast.jsx';
 import { useMutation } from '@tanstack/react-query';
-import { generateFloorPlan, generateFinalPlan } from '../services/aiService';
+import { generateFloorPlan, generateFinalPlan, generateBOM } from '../services/aiService';
 import { useDispatch, useSelector } from 'react-redux';
 import { refreshUser } from '../features/auth/authSlice';
+import BOMViewer from '../components/floorplan/BOMViewer.jsx';
 
 function isCreditError(error) {
   return error?.status === 409 && /credit/i.test(error?.message || '');
@@ -34,6 +35,7 @@ export default function FloorPlanGenerator() {
   const render3D = useMutation({
     mutationFn: ({ planId, extraFields }) => generateFinalPlan({ planId, extraFields }),
   });
+  const bomMutation = useMutation({ mutationFn: (planId) => generateBOM(planId) });
 
   const [renderInputs, setRenderInputs] = useState({
     numberOfFloors: 1,
@@ -48,6 +50,23 @@ export default function FloorPlanGenerator() {
   const plan = plan2D.data;
   const planImage = plan?.floorPlan;
   const renderImage = render3D.data?.finalDesign || plan?.finalDesign;
+  const bom = bomMutation.data?.billOfMaterials;
+  const hasRender = Boolean(renderImage);
+
+  const handleBOM = () => {
+    if (!plan?._id) return;
+    bomMutation.mutate(plan._id, {
+      onSuccess: () => {
+        if (typeof user?.credits === 'number') dispatch(refreshUser({ credits: Math.max(0, user.credits - 1) }));
+        toast.success('Bill of materials generated (1 credit used).');
+      },
+      onError: (err) => {
+        syncCredits(err, 1);
+        if (isCreditError(err)) toast.error('Not enough credits for a BOM (needs 1).');
+        else toast.error(getErrorMessage(err, 'Failed to generate bill of materials.'));
+      },
+    });
+  };
 
   const handleInput = (e) => {
     const { name, value } = e.target;
@@ -60,6 +79,7 @@ export default function FloorPlanGenerator() {
       return;
     }
     render3D.reset();
+    bomMutation.reset();
     setRenderInputs((prev) => ({ ...prev, numberOfFloors: Number(formData.floors) || 1 }));
     plan2D.mutate(formData, {
       onSuccess: () => {
@@ -113,7 +133,7 @@ export default function FloorPlanGenerator() {
             Vastu-Compliant AI Floor Plan Generator
           </h1>
           <p className="text-sm text-slate-500 leading-relaxed max-w-xl mx-auto">
-            Step 1 generates a 2D blueprint image (2 credits). Step 2 turns it into a photorealistic 3D exterior render (3 credits).
+            Step 1 generates a 2D blueprint image (2 credits). Step 2 turns it into a photorealistic 3D exterior render (3 credits). Step 3 estimates a bill of materials (1 credit).
           </p>
           {typeof user?.credits === 'number' && (
             <p className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-full">
@@ -257,6 +277,30 @@ export default function FloorPlanGenerator() {
                     ) : (
                       <img src={renderImage} alt="AI generated 3D exterior render" className="w-full rounded-xl border border-slate-800 object-contain" loading="lazy" />
                     )}
+                  </div>
+                )}
+
+                {hasRender && (
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+                    <h3 className="font-extrabold text-slate-900 text-base">Step 3 — Bill of Materials (1 credit)</h3>
+                    {!bom && (
+                      <button
+                        type="button"
+                        onClick={handleBOM}
+                        disabled={bomMutation.isPending}
+                        className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-slate-950 font-extrabold py-3.5 px-4 rounded-xl text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>{bomMutation.isPending ? 'Estimating materials…' : 'Generate Bill of Materials'}</span>
+                      </button>
+                    )}
+                    {bomMutation.isPending && <Loader message="Estimating quantities with AI…" />}
+                    {bomMutation.isError && (
+                      <p className="text-xs font-bold text-red-600">
+                        {isCreditError(bomMutation.error) ? 'Not enough credits for a BOM (needs 1).' : getErrorMessage(bomMutation.error)}
+                      </p>
+                    )}
+                    {bom && bom.items && bom.items.length > 0 && <BOMViewer bom={bom} />}
                   </div>
                 )}
               </div>

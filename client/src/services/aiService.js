@@ -45,3 +45,12 @@ export const generateFinalPlan = async ({ planId, extraFields }) => {
     throw error instanceof Error ? error : new Error('Failed to generate 3D render.');
   }
 };
+
+export const generateBOM = async (planId) => {
+  try {
+    const response = await apiClient.post(`/api/generate/bom/${planId}`);
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to generate bill of materials.');
+  }
+};

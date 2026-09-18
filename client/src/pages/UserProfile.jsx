@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Phone, ArrowRight, ShoppingBag, FileText, Download, Trash2, Calendar, Award, Coins } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { useQuery } from '@tanstack/react-query';
-import { getSavedPlans } from '../services/aiService';
-import { useToast } from '../components/common/Toast.jsx';
+import { useDispatch, useSelector } from 'react-redux';
+import { refreshUser } from '../features/auth/authSlice';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getSavedPlans, generateBOM } from '../services/aiService';
+import { useToast, getErrorMessage } from '../components/common/Toast.jsx';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState.jsx';
+import BOMViewer from '../components/floorplan/BOMViewer.jsx';
 
 const QUOTES = [
   { id: 1, material: 'UltraTech Premium OPC 53 Grade Cement', qty: 150, unit: 'bags', vendor: 'Narmada Building Materials', date: 'June 14, 2026', status: 'Quote Sent: ₹63,000', statusColor: 'bg-green-50 text-green-700 border-green-200' },
@@ -16,12 +18,27 @@ const QUOTES = [
 export default function UserProfile() {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('quotes');
 
   // Route is guarded; query reads token via apiClient interceptor.
   const { data: plans, isLoading } = useQuery({ queryKey: ['saved-plans'], queryFn: () => getSavedPlans(), enabled: Boolean(user) });
   const savedPlans = plans || [];
+
+  const bomMutation = useMutation({
+    mutationFn: (planId) => generateBOM(planId),
+    onSuccess: () => {
+      if (typeof user?.credits === 'number') dispatch(refreshUser({ credits: Math.max(0, user.credits - 1) }));
+      toast.success('Bill of materials generated (1 credit used).');
+      queryClient.invalidateQueries({ queryKey: ['saved-plans'] });
+    },
+    onError: (err) => {
+      const creditError = err?.status === 409 && /credit/i.test(err?.message || '');
+      toast.error(creditError ? 'Not enough credits for a BOM (needs 1).' : getErrorMessage(err, 'Failed to generate bill of materials.'));
+    },
+  });
 
   const showToast = (message) => toast.info(message);
 
@@ -135,22 +152,39 @@ export default function UserProfile() {
                 <EmptyState icon="📐" title="No saved plans" message="Generate a 2D blueprint from the Floor Plan page and it will appear here." />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {savedPlans.map((plan) => (
-                    <div key={plan._id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4 transition-shadow duration-200 hover:shadow">
-                      {(plan.floorPlan || plan.finalDesign) && (
-                        <img src={plan.finalDesign || plan.floorPlan} alt="Saved AI plan" className="w-full rounded-xl border border-slate-100 object-cover aspect-[4/3]" loading="lazy" />
-                      )}
-                      <div className="pt-3 border-t border-slate-50 flex gap-2">
-                        <button type="button" onClick={() => showToast('Blueprint download (simulated)')} className="w-full flex items-center justify-center gap-1 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold py-1.5 rounded-lg text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                          <Download className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Get Image</span>
-                        </button>
-                        <button type="button" aria-label="Remove blueprint" onClick={() => showToast('Blueprint removed (simulated)')} className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                  {savedPlans.map((plan) => {
+                    const hasBOM = plan.billOfMaterials && plan.billOfMaterials.items && plan.billOfMaterials.items.length > 0;
+                    const canBOM = plan.finalDesign && !hasBOM;
+                    const bomPending = bomMutation.isPending && bomMutation.variables === plan._id;
+                    return (
+                      <div key={plan._id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4 transition-shadow duration-200 hover:shadow">
+                        {(plan.floorPlan || plan.finalDesign) && (
+                          <img src={plan.finalDesign || plan.floorPlan} alt="Saved AI plan" className="w-full rounded-xl border border-slate-100 object-cover aspect-[4/3]" loading="lazy" />
+                        )}
+                        {canBOM && (
+                          <button
+                            type="button"
+                            onClick={() => bomMutation.mutate(plan._id)}
+                            disabled={bomMutation.isPending}
+                            className="w-full flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-slate-950 font-extrabold py-2 px-4 rounded-xl text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>{bomPending ? 'Estimating…' : 'Generate Bill of Materials (1 credit)'}</span>
+                          </button>
+                        )}
+                        {hasBOM && <BOMViewer bom={plan.billOfMaterials} />}
+                        <div className="pt-3 border-t border-slate-50 flex gap-2">
+                          <button type="button" onClick={() => showToast('Blueprint download (simulated)')} className="w-full flex items-center justify-center gap-1 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold py-1.5 rounded-lg text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <Download className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Get Image</span>
+                          </button>
+                          <button type="button" aria-label="Remove blueprint" onClick={() => showToast('Blueprint removed (simulated)')} className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             )}
