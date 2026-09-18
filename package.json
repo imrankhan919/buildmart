@@ -16,9 +16,14 @@
   "main": "server.js",
   "scripts": {
     "server": "node --watch server/server.js",
+    "server:start": "node server/server.js",
     "client": "cd client && npm run dev",
     "build": "npm  install && cd client && npm install",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "seed:users": "node seed/users.js",
+    "seed:products": "node server/seed/products.js",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@google/genai": "^2.6.0",
@@ -33,5 +38,8 @@
     "multer": "^2.1.1",
     "node-fetch": "^3.3.2",
     "react-hot-toast": "^2.6.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   }
 }

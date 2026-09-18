@@ -1,6 +1,5 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, ShieldCheck, Truck, Handshake, ChevronRight } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/marketplace/ProductCard';
 
 export default function Home() {

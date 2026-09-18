@@ -1,21 +1,12 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Star, MapPin, ShoppingCart, Info } from 'lucide-react';
+import { Star, MapPin } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 export default function ProductCard({ product }) {
-  const {
-    _id,
-    name,
-    category,
-    price,
-    unit,
-    vendor,
-    location,
-    rating,
-    image,
-    minOrderQty,
-    availability,
-  } = product;
+  const { _id, id, name, category, price, unit, vendor, vendorName, location, image, stock } = product;
+  const detailId = _id || id;
+  const vendorLabel = vendor?.name || vendorName || 'Verified vendor';
+  const locationLabel = vendor?.address || location || '';
 
   // Category Colors
   const categoryColors = {
@@ -27,7 +18,7 @@ export default function ProductCard({ product }) {
     wood: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
 
-  const currentCategoryColor = categoryColors[category.toLowerCase()] || 'bg-slate-50 text-slate-700 border-slate-200';
+  const currentCategoryColor = categoryColors[(category || '').toLowerCase()] || 'bg-slate-50 text-slate-700 border-slate-200';
 
   return (
     <div className="group bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1">
@@ -40,8 +31,8 @@ export default function ProductCard({ product }) {
           loading="lazy"
         />
         {/* Availability Badge */}
-        <span className={`absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full border shadow-sm`}>
-          {product.stock > 0 ? "Available" : "Out Of Stock"}
+        <span className="absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full border shadow-sm bg-white/90">
+          {(stock ?? 1) > 0 ? "Available" : "Out Of Stock"}
         </span>
 
         {/* Category Badge */}
@@ -55,7 +46,7 @@ export default function ProductCard({ product }) {
         <div className="flex items-center justify-between mb-2">
           {/* Vendor Name */}
           <span className="text-xs font-medium text-slate-400 truncate max-w-[60%]">
-            {vendor?.name}
+            {vendorLabel}
           </span>
           {/* Rating */}
           <div className="flex items-center gap-1 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-lg">
@@ -72,7 +63,7 @@ export default function ProductCard({ product }) {
         {/* Location */}
         <div className="flex items-center gap-1 text-slate-500 text-xs mb-4">
           <MapPin className="w-3.5 h-3.5 text-slate-400" />
-          <span>{vendor?.address}</span>
+          <span>{locationLabel}</span>
         </div>
 
         <div className="mt-auto pt-4 border-t border-slate-50">
@@ -81,18 +72,18 @@ export default function ProductCard({ product }) {
             <div>
               <span className="text-xs text-slate-400">Price</span>
               <div className="text-lg font-extrabold text-slate-900">
-                ₹{price.toLocaleString('en-IN')} <span className="text-xs font-medium text-slate-500">/ {product.price}</span>
+                ₹{Number(price || 0).toLocaleString('en-IN')} <span className="text-xs font-medium text-slate-500">/ {unit || 'unit'}</span>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-slate-400 block">Availabel Stock</span>
-              <span className="text-xs font-bold text-slate-700">{product.stock}</span>
+              <span className="text-[10px] text-slate-400 block">Available Stock</span>
+              <span className="text-xs font-bold text-slate-700">{stock ?? '—'}</span>
             </div>
           </div>
 
           {/* View details action */}
           <Link
-            to={`/marketplace/${_id}`}
+            to={detailId ? `/marketplace/${detailId}` : '/marketplace'}
             className="w-full flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl text-sm transition-all duration-200 group-hover:bg-amber-500 group-hover:border-amber-500 group-hover:text-slate-950"
           >
             <span>View Details</span>
@@ -102,3 +93,19 @@ export default function ProductCard({ product }) {
     </div>
   );
 }
+
+ProductCard.propTypes = {
+  product: PropTypes.shape({
+    _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string.isRequired,
+    category: PropTypes.string.isRequired,
+    price: PropTypes.number.isRequired,
+    unit: PropTypes.string,
+    vendor: PropTypes.object,
+    vendorName: PropTypes.string,
+    location: PropTypes.string,
+    image: PropTypes.string,
+    stock: PropTypes.number,
+  }).isRequired,
+};

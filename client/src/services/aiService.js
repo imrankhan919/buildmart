@@ -1,46 +1,56 @@
-// Generate Floor Plan
+import apiClient from './apiClient.js';
 
-import axios from "axios"
-
-export const getSavedPlans = async (token) => {
-
-  const options = {
-    headers: {
-      authorization: `Bearer ${token}`
-    }
+export const getSavedPlans = async () => {
+  try {
+    const response = await apiClient.get('/api/generate/floor-plan');
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to load saved plans.');
   }
+};
 
-  const response = await axios.get("/api/generate/floor-plan", options)
-  return response.data
-
-
-}
-
-
-// Generate Floor Plan
 export const generateFloorPlan = async (payload) => {
-
-  const { token, formData } = payload
-
-  const options = {
-    headers: {
-      authorization: `Bearer ${token}`
-    }
+  try {
+    const { formData } = payload;
+    // Structured fields — the backend builds prompts from these discrete values.
+    const finalData = {
+      plotLength: Number(formData.length),
+      plotWidth: Number(formData.width),
+      floors: Number(formData.floors),
+      rooms: formData.rooms,
+      layoutStyle: formData.layoutStyle,
+      notes: formData.notes || '',
+    };
+    const response = await apiClient.post('/api/generate/floor-plan', finalData);
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to generate floor plan.');
   }
+};
 
-  console.log(formData)
-
-  const finalData = {
-    plotSize: `${formData.length} x ${formData.width}`,
-    floors: formData.floors,
-    extraInformation: `${formData.layoutStyle} , ${formData.rooms} , ${formData.notes}`
+export const generateFinalPlan = async ({ planId, extraFields }) => {
+  try {
+    const response = await apiClient.post(`/api/generate/final-plan/${planId}`, {
+      numberOfFloors: extraFields?.numberOfFloors,
+      plotSize: extraFields?.plotSize,
+      facingDirection: extraFields?.facingDirection,
+      architecturalStyle: extraFields?.architecturalStyle,
+      wallFinish: extraFields?.wallFinish,
+      roofType: extraFields?.roofType,
+      balcony: extraFields?.balcony,
+      additionalFeatures: extraFields?.additionalFeatures,
+    });
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to generate 3D render.');
   }
+};
 
-
-
-
-  const response = await axios.post("/api/generate/floor-plan", finalData, options)
-  console.log(response)
-  return response.data
-
-}
+export const generateBOM = async (planId) => {
+  try {
+    const response = await apiClient.post(`/api/generate/bom/${planId}`);
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to generate bill of materials.');
+  }
+};

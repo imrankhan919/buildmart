@@ -1,16 +1,19 @@
-import axios from "axios"
-
-const BASE_URL = "/api/products"
-
+import apiClient from './apiClient.js';
 
 export const getAllProducts = async () => {
-  const response = await axios.get(BASE_URL)
-  return response.data
-}
+  try {
+    const response = await apiClient.get('/api/products');
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to load products.');
+  }
+};
 
-export const getProduct = async (product_id) => {
-  console.log(product_id)
-  const response = await axios.get(BASE_URL + "/" + product_id)
-  console.log(response.data)
-  return response.data
-}
+export const getProduct = async (productId) => {
+  try {
+    const response = await apiClient.get(`/api/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to load product.');
+  }
+};

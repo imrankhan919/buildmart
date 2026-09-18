@@ -1,5 +1,17 @@
 🏗️ BuildMart — House Raw Material Marketplace
 
+> CORRECTION (frontend audit, Sep 2026): the AI sections below still mention
+> Claude/Anthropic and a JSON contract (`floorPlan2D`/`render3DDescription`/
+> `materialEstimate`) plus `/api/ai/*` endpoints. The actual implementation in
+> `server/controllers/genrateImageController.js` uses Google Gemini
+> (`@google/genai`, `gemini-3.1-flash-image-preview` for 2D, `gemini-2.5-flash-image`
+> for 3D) and returns Cloudinary image URLs via a two-step credit-gated flow:
+> `POST /api/generate/floor-plan` (2 credits → `{ _id, floorPlan: <url> }`) then
+> `POST /api/generate/final-plan/:pid` (3 credits → `{ _id, floorPlan, finalDesign: <url> }`).
+> There is no `GET /api/auth/me` route (`server/routes/authRoutes.js` only has
+> `POST /register`, `POST /login`, `POST /private`). Set `GEMINI_API_KEY` (not
+> `ANTHROPIC_API_KEY`) in `server/.env`. The client now implements this real flow.
+
 A full-stack MERN marketplace for browsing construction raw materials (cement, bricks, tiles & more) with AI-powered 2D floor plan + 3D render generation from plot dimensions.
 
 🚀 Features

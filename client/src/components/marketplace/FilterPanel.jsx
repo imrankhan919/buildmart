@@ -1,5 +1,4 @@
-import React from 'react';
-import { SlidersHorizontal, RotateCcw, Check, Star } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 
 export default function FilterPanel() {
   const categories = [

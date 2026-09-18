@@ -1,31 +1,31 @@
-import axios from "axios";
+import apiClient from './apiClient.js';
 
 export const getVendors = async () => {
-  const response = await axios.get("/api/vendor/profiles")
-  return response.data
+  try {
+    const response = await apiClient.get('/api/vendor/profiles');
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to load vendors.');
+  }
 };
 
 export const getVendor = async (id) => {
-  const response = await axios.get("/api/vendor/profiles/" + id)
-  console.log(response.data)
-  return response.data
-
+  try {
+    const response = await apiClient.get(`/api/vendor/profiles/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to load vendor.');
+  }
 };
 
-export const getVendorData = async (token) => {
-
-  const options = {
-    headers: {
-      authorization: `Bearer ${token}`
-    }
+export const getVendorData = async () => {
+  try {
+    const [productsRes, ordersRes] = await Promise.all([
+      apiClient.get('/api/vendor/product'),
+      apiClient.get('/api/vendor/orders'),
+    ]);
+    return { products: productsRes.data, orders: ordersRes.data };
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Failed to load vendor dashboard.');
   }
-
-  const productsData = await axios.get("/api/vendor/product", options)
-  const ordersData = await axios.get("/api/vendor/orders", options)
-
-  const data = { products: productsData.data, orders: ordersData.data }
-
-  console.log(data)
-
-  return data
-}
+};
