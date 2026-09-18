@@ -6,6 +6,7 @@ import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js";
 import GeneratedPlan from "../models/generatedPlanModel.js";
 import User from "../models/userModel.js"
 import { GEMINI_IMAGE_MODEL_2D, GEMINI_IMAGE_MODEL_3D, CREDIT_COST_2D, CREDIT_COST_3D } from "../config/aiModels.js";
+import { roomListFor, isVastuStyle } from "../utils/planRooms.js";
 
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -189,14 +190,28 @@ const generateFloorPlan = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - CREDIT_COST_2D }, { new: true })
 
 
-        const prompt = `Architectural 2D floor plan, top-down view, blueprint style.
-        Plot size: ${plotLength} x ${plotWidth}
-        Floors: ${floors}
-        Rooms: ${rooms}
-        Style: ${layoutStyle}
-        Additional requirements: ${notes || "none"}
-        Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
-        Strictly flat 2D overhead plan. Professional blueprint aesthetic.`
+        const roomList = roomListFor(rooms);
+        const aspectRatio = (Number(plotLength) / Number(plotWidth)).toFixed(2);
+        const vastuBlock = isVastuStyle(layoutStyle)
+            ? `Vastu compliance (mandatory for this plan): main entrance facing east or north; kitchen in the south-east corner; master bedroom in the south-west; pooja/meditation space in the north-east; toilets in the north-west or south-east, never the north-east.`
+            : `No Vastu constraints apply; optimize purely for light, ventilation, and circulation.`;
+        const prompt = `Architectural 2D floor plan, strictly top-down orthographic view, professional blueprint style.
+        Site:
+        - Plot dimensions: ${plotLength} ft (length) x ${plotWidth} ft (width). Aspect ratio ${aspectRatio}. Respect this exact footprint and proportion in the layout.
+        - Number of floors to show: ${floors}. Draw the ground-floor layout.
+        - Required rooms (include every one, correctly proportioned): ${roomList.join(", ")}.
+        - Layout philosophy: ${layoutStyle}.
+        - Client notes: ${notes || "none"}.
+        Drawing conventions (mandatory):
+        - White background, thick black wall lines, thin grey partition lines.
+        - Every room labeled in Arial font with name and size in square feet.
+        - Doors shown as quarter-circle swing arcs, windows as parallel lines breaking the wall.
+        - Dimensions marked along the outer edges, north arrow in the top-right corner, scale bar at the bottom.
+        - Indian NBC standard room sizing with clear circulation paths, optimal natural light and ventilation.
+
+        ${vastuBlock}
+
+        Negative constraints (mandatory): flat 2D line drawing only — no furniture, no color fill, no shading gradients, no people, no watermark or logo text, no photorealistic or 3D rendering of any kind.`;
 
         const floorPlan = await generate2DImage(userId, prompt).catch(async (geminiError) => {
             console.error("Gemini 2D failed, trying Pollinations fallback:", geminiError?.message);
@@ -267,7 +282,7 @@ const generateFinalPlan = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - CREDIT_COST_3D }, { new: true })
 
 
-        const prompt = `Analyze this 2D floor plan and generate a photorealistic 3D exterior elevation image of this exact house. 
+        const prompt = `Analyze this 2D floor plan and generate a photorealistic 3D exterior elevation image of this exact house. Match the footprint, floor count, and room arrangement visible in the plan.
 
     Building details:
     - number of floors ${numberOfFloors}
@@ -279,7 +294,11 @@ const generateFinalPlan = async (req, res) => {
     - balcony ${balcony}
     - additional features ${additionalFeatures}
 
-    Render as:photorealistic architectural visualization, 3/4 perspective view, golden hour lighting, 8K ultra-detailed, sharp focus, lush surroundings, blue sky background, no people, hyper-realistic materials and textures --ar 16:9`
+    Camera and lighting convention (always the same): 3/4 aerial perspective view from the front-left, golden hour lighting, clear blue sky background, lush but neutral surroundings.
+
+    Render as: photorealistic architectural visualization, 8K ultra-detailed, sharp focus, hyper-realistic materials and textures.
+
+    Negative constraints (mandatory): no people, no animals, no vehicles, no unrelated neighboring buildings in frame, no text overlays, no watermarks, no logos.`
 
 
         let finalPlan = await generate3dImage(plan?.floorPlan, prompt)
