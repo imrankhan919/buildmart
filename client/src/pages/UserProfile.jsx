@@ -9,6 +9,7 @@ import { useToast, getErrorMessage } from '../components/common/Toast.jsx';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState.jsx';
 import BOMViewer from '../components/floorplan/BOMViewer.jsx';
+import { generatePlanPdf } from '../utils/generatePlanPdf.js';
 
 const QUOTES = [
   { id: 1, material: 'UltraTech Premium OPC 53 Grade Cement', qty: 150, unit: 'bags', vendor: 'Narmada Building Materials', date: 'June 14, 2026', status: 'Quote Sent: ₹63,000', statusColor: 'bg-green-50 text-green-700 border-green-200' },
@@ -41,6 +42,18 @@ export default function UserProfile() {
   });
 
   const showToast = (message) => toast.info(message);
+
+  const handleDownloadPdf = async (plan) => {
+    try {
+      await generatePlanPdf({
+        plan,
+        onImageError: (which) => toast.error(`${which} could not be embedded in the PDF.`),
+      });
+      toast.success('PDF report downloaded.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not build the PDF.'));
+    }
+  };
 
   if (!user) return <Loader message="Loading profile…" />;
 
@@ -173,6 +186,16 @@ export default function UserProfile() {
                           </button>
                         )}
                         {hasBOM && <BOMViewer bom={plan.billOfMaterials} />}
+                        {hasBOM && (
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadPdf(plan)}
+                            className="w-full flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          >
+                            <Download className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Download Full Report (PDF)</span>
+                          </button>
+                        )}
                         <div className="pt-3 border-t border-slate-50 flex gap-2">
                           <button type="button" onClick={() => showToast('Blueprint download (simulated)')} className="w-full flex items-center justify-center gap-1 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold py-1.5 rounded-lg text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
                             <Download className="w-3.5 h-3.5 text-slate-400" />

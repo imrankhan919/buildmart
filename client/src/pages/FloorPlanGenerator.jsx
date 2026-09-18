@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, FileText, Share2, Printer, Eye, Coins } from 'lucide-react';
+import { Sparkles, FileText, Share2, Printer, Eye, Coins, Download } from 'lucide-react';
 import PlotInputForm from '../components/floorplan/PlotInputForm';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState.jsx';
@@ -9,6 +9,7 @@ import { generateFloorPlan, generateFinalPlan, generateBOM } from '../services/a
 import { useDispatch, useSelector } from 'react-redux';
 import { refreshUser } from '../features/auth/authSlice';
 import BOMViewer from '../components/floorplan/BOMViewer.jsx';
+import { generatePlanPdf } from '../utils/generatePlanPdf.js';
 
 function isCreditError(error) {
   return error?.status === 409 && /credit/i.test(error?.message || '');
@@ -51,7 +52,21 @@ export default function FloorPlanGenerator() {
   const planImage = plan?.floorPlan;
   const renderImage = render3D.data?.finalDesign || plan?.finalDesign;
   const bom = bomMutation.data?.billOfMaterials;
+  const bomPlan = bomMutation.data;
   const hasRender = Boolean(renderImage);
+
+  const handleDownloadPdf = async () => {
+    if (!bomPlan) return;
+    try {
+      await generatePlanPdf({
+        plan: bomPlan,
+        onImageError: (which) => toast.error(`${which} could not be embedded in the PDF.`),
+      });
+      toast.success('PDF report downloaded.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not build the PDF.'));
+    }
+  };
 
   const handleBOM = () => {
     if (!plan?._id) return;
@@ -301,6 +316,16 @@ export default function FloorPlanGenerator() {
                       </p>
                     )}
                     {bom && bom.items && bom.items.length > 0 && <BOMViewer bom={bom} />}
+                    {bom && bom.items && bom.items.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleDownloadPdf}
+                        className="w-full flex items-center justify-center gap-2 border-2 border-slate-900 bg-white hover:bg-slate-50 text-slate-900 font-extrabold py-3 px-4 rounded-xl text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download Full Report (PDF)</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
