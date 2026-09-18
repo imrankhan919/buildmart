@@ -319,6 +319,7 @@ export default function FloorPlanGenerator() {
                     {bom && bom.items && bom.items.length > 0 && (
                       <button
                         type="button"
+                        data-testid="download-pdf-session"
                         onClick={handleDownloadPdf}
                         className="w-full flex items-center justify-center gap-2 border-2 border-slate-900 bg-white hover:bg-slate-50 text-slate-900 font-extrabold py-3 px-4 rounded-xl text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                       >

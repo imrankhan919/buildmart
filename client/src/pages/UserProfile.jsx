@@ -189,6 +189,7 @@ export default function UserProfile() {
                         {hasBOM && (
                           <button
                             type="button"
+                            data-testid={`download-pdf-${plan._id}`}
                             onClick={() => handleDownloadPdf(plan)}
                             className="w-full flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                           >
