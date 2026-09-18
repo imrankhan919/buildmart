@@ -1,106 +1,76 @@
-import React, { useEffect, useState } from 'react';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import Loader from "../components/common/Loader"
-import { ShieldAlert, Users, Award, ShoppingBag, ShieldCheck, Check, X, Trash2, Ban, Eye, Globe, ChevronRight } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
-import { getUsers, updateVendor } from '../services/adminService';
-import { setStats } from '../features/admin/adminSlice';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import Loader from '../components/common/Loader';
+import EmptyState from '../components/common/EmptyState.jsx';
+import { TableSkeleton } from '../components/common/Skeletons.jsx';
+import { getErrorMessage } from '../components/common/Toast.jsx';
+import { getUsers } from '../services/adminService';
 import VendorList from '../components/admin/VendorList';
 import AllVendorList from '../components/admin/AllVendorList';
 import TransactionList from '../components/admin/TransactionList';
+import { ShieldAlert, Users, Award, ShoppingBag, Globe } from 'lucide-react';
 
 export default function AdminDashboard() {
-
-  const dispatch = useDispatch()
-
-  const { user } = useSelector(state => state.auth)
-
-  // Access the client
-  const queryClient = useQueryClient()
-
-  // Queries
-  const { data, isLoading, isError, isSuccess, error } = useQuery({ queryKey: ['users'], queryFn: () => getUsers(user.token) })
-  const { users, vendors, products, orders, ratings, credits } = useSelector(state => state.admin)
-
-
+  // Route is already guarded by AdminOnly; data comes straight from React Query.
+  const { data, isLoading, isError, error } = useQuery({ queryKey: ['admin-overview'], queryFn: () => getUsers() });
   const [activeTab, setActiveTab] = useState('credits');
-  const [toastMessage, setToastMessage] = useState(null);
-
-
-
-  // Stats Data
-  const adminStats = [
-    { title: 'Registered Users', value: users?.length, icon: <Users className="w-5 h-5 text-blue-500" />, desc: '5 joined this month' },
-    { title: 'Verified Suppliers', value: vendors?.length, icon: <Award className="w-5 h-5 text-amber-500" />, desc: vendors.filter(v => v.status !== "active").length + ' awaiting approval' },
-    { title: 'Active Listings', value: products?.length, icon: <ShoppingBag className="w-5 h-5 text-purple-500" />, desc: '32 categories active' },
-    { title: 'Commission (Mth)', value: orders.reduce((acc, order) => acc + order.totalBillAmount, 0) + '₹', icon: <Globe className="w-5 h-5 text-emerald-500" />, desc: '1.5% platform fee net' },
-  ];
-
-
-
-
-
-
-
-  useEffect(() => {
-    if (isSuccess) {
-      dispatch(setStats(data))
-    }
-  }, [data])
-
 
   if (isLoading) {
     return (
-      <Loader message="Loading Data" />
-    )
-  }
-
-
-
-  if (!user.isAdmin) {
-    return (
-      <div className="bg-slate-50 min-h-[70vh] flex items-center justify-center p-4">
-        <div className="bg-white border border-slate-100 rounded-3xl p-8 max-w-sm text-center shadow-md">
-          <div className="text-3xl mb-4">🔒</div>
-          <h3 className="font-extrabold text-slate-900 text-lg mb-2">Admin Credentials Required</h3>
-          <p className="text-slate-400 text-sm leading-relaxed mb-6">
-            Please switch your role to "Admin" in the Navbar Role Switcher dropdown to access platform management.
-          </p>
+      <div className="bg-slate-50 min-h-screen py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <Loader message="Loading admin data…" />
+          <TableSkeleton rows={6} />
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="bg-slate-50 min-h-screen py-10 relative">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-800 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
-          <span className="text-amber-500">✨</span>
-          <p className="text-sm font-bold">{toastMessage}</p>
+  if (isError || !data) {
+    return (
+      <div className="bg-slate-50 min-h-screen py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <EmptyState icon="⚠️" title="Could not load admin data" message={getErrorMessage(error)} />
         </div>
-      )}
+      </div>
+    );
+  }
 
+  const users = data.users || [];
+  const vendors = data.vendors || [];
+  const products = data.products || [];
+  const orders = data.orders || [];
+  const credits = data.credits || [];
+
+  const adminStats = [
+    { title: 'Registered Users', value: users.length, icon: <Users className="w-5 h-5 text-blue-500" />, desc: 'total accounts' },
+    { title: 'Verified Suppliers', value: vendors.length, icon: <Award className="w-5 h-5 text-amber-500" />, desc: `${vendors.filter((v) => v.status !== 'active').length} awaiting approval` },
+    { title: 'Active Listings', value: products.length, icon: <ShoppingBag className="w-5 h-5 text-purple-500" />, desc: 'total products' },
+    { title: 'Commission (Mth)', value: `${orders.reduce((acc, o) => acc + (o.totalBillAmount || 0), 0)}₹`, icon: <Globe className="w-5 h-5 text-emerald-500" />, desc: '1.5% platform fee net' },
+  ];
+
+  const tabs = [
+    { id: 'credits', label: `Credits History (${credits.filter((c) => !c.isGranted).length})` },
+    { id: 'approvals', label: `Pending Approvals (${vendors.filter((v) => v.status === 'pending').length})` },
+    { id: 'users', label: `All Users (${users.length})` },
+    { id: 'vendors', label: `All Vendors (${vendors.length})` },
+  ];
+
+  return (
+    <div className="bg-slate-50 min-h-screen py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Header Title */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-55 border border-amber-200 px-3 py-1 rounded-lg w-max mb-3 uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg w-max mb-3 uppercase tracking-wider">
             <ShieldAlert className="w-4 h-4 text-amber-500" />
             <span>Platform Owner Administration Panel</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">BuildMart Control Center</h1>
-          <p className="text-xs text-slate-400">Oversee registered users, verify supplier approvals, and moderate global material listings.</p>
+          <p className="text-xs text-slate-400">Oversee users, verify suppliers, and moderate listings.</p>
         </div>
 
-        {/* Stats KPIs Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 select-none">
-          {adminStats.map((stat, i) => (
-            <div key={i} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4">
+          {adminStats.map((stat) => (
+            <div key={stat.title} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4 transition-shadow duration-200 hover:shadow-md">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-400">{stat.title}</span>
                 <div className="p-2 bg-slate-50 border border-slate-100 rounded-lg">{stat.icon}</div>
@@ -113,124 +83,85 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Action Panel Container */}
         <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-
-          {/* Tab Headers */}
-          <div className="border-b border-slate-150 flex gap-6 pb-0.5">
-            <button
-              onClick={() => setActiveTab('credits')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'credits'
-                ? 'border-amber-500 text-amber-600'
-                : 'border-transparent text-slate-450 hover:text-slate-800'
-                }`}
-            >
-              Credits History ({credits.filter(credit => !credit.isGranted).length})
-            </button>
-            <button
-              onClick={() => setActiveTab('approvals')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'approvals'
-                ? 'border-amber-500 text-amber-600'
-                : 'border-transparent text-slate-450 hover:text-slate-800'
-                }`}
-            >
-              Pending Approvals ({vendors.filter(vendor => vendor.status === "pending").length})
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'users'
-                ? 'border-amber-500 text-amber-600'
-                : 'border-transparent text-slate-450 hover:text-slate-800'
-                }`}
-            >
-              All Users ({users.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('vendors')}
-              className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'vendors'
-                ? 'border-amber-500 text-amber-600'
-                : 'border-transparent text-slate-450 hover:text-slate-800'
-                }`}
-            >
-              All Vendors ({vendors.length})
-            </button>
+          <div className="border-b border-slate-150 flex gap-6 pb-0.5 overflow-x-auto">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-colors duration-200 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-amber-500 ${activeTab === t.id ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-800'}`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
-
-          {/* Global Catalog Tab View */}
           {activeTab === 'credits' && (
             <div className="overflow-x-auto">
-              <TransactionList credits={credits} />
+              {credits.length === 0 ? (
+                <EmptyState icon="💳" title="No credit requests" message="Credit requests from users will appear here." />
+              ) : (
+                <TransactionList credits={credits} />
+              )}
             </div>
           )}
 
-
-
-          {/* Pending Approvals Tab View */}
           {activeTab === 'approvals' && (
             <div className="space-y-4">
-              {vendors.filter(vendor => vendor.status === "pending").length === 0 ? (
-                <div className="text-center py-10 text-slate-405 font-medium">No pending verification queues.</div>
+              {vendors.filter((v) => v.status === 'pending').length === 0 ? (
+                <div className="text-center py-10 text-slate-400 font-medium">No pending verification queues.</div>
               ) : (
-                vendors.filter(vendor => vendor.status === "pending").map((item) => (
-                  <VendorList item={item} user={user} />
+                vendors.filter((v) => v.status === 'pending').map((item) => (
+                  <VendorList key={item._id} item={item} />
                 ))
               )}
             </div>
           )}
 
-          {/* Suppliers Tab View */}
           {activeTab === 'vendors' && (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-450">
-                    <th className="pb-3">Business Name</th>
-                    <th className="pb-3">Owner</th>
-                    <th className="pb-3">Category</th>
-                    <th className="pb-3">Location</th>
-                    <th className="pb-3">Licensing Status</th>
-                    <th className="pb-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {vendors.map((v) => (
-                    <tr key={v.id} className="hover:bg-slate-50/50">
-                      <td className="py-4 font-bold text-slate-900 pr-4">{v.name}</td>
-                      <td className="py-4 text-slate-500 font-semibold">{v.user.name}</td>
-                      <td className="py-4 text-slate-500 font-semibold">{v.category}</td>
-                      <td className="py-4 text-slate-500 font-medium">{v.address}</td>
-                      <td className="py-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${v.status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                          {v.status}
-                        </span>
-                      </td>
-                      <td className="py-4 text-right">
-                        <button
-                          className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${v.status === 'active'
-                            ? 'border-red-200 text-red-700 hover:bg-red-50'
-                            : 'border-green-200 text-green-700 hover:bg-green-50'
-                            }`}
-                        >
-                          {v.status === 'active' ? 'Suspend' : 'Verify'}
-                        </button>
-                      </td>
+              {vendors.length === 0 ? (
+                <EmptyState icon="🏪" title="No vendors" message="Vendor applications will appear here." />
+              ) : (
+                <table className="w-full text-left text-sm min-w-[720px]">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <th className="pb-3">Business Name</th>
+                      <th className="pb-3">Owner</th>
+                      <th className="pb-3">Category</th>
+                      <th className="pb-3">Location</th>
+                      <th className="pb-3">Licensing Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {vendors.map((v) => (
+                      <tr key={v._id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 font-bold text-slate-900 pr-4">{v.name}</td>
+                        <td className="py-4 text-slate-500 font-semibold">{v.user?.name}</td>
+                        <td className="py-4 text-slate-500 font-semibold">{v.category}</td>
+                        <td className="py-4 text-slate-500 font-medium">{v.address}</td>
+                        <td className="py-4">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-700 border-slate-200">{v.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
-          {/* Global Catalog Tab View */}
           {activeTab === 'users' && (
             <div className="overflow-x-auto">
-              <AllVendorList users={users} />
+              {users.length === 0 ? (
+                <EmptyState icon="👥" title="No users" message="Registered users will appear here." />
+              ) : (
+                <AllVendorList users={users} />
+              )}
             </div>
           )}
-
         </div>
-
       </div>
     </div>
   );
