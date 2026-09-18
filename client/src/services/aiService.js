@@ -12,10 +12,14 @@ export const getSavedPlans = async () => {
 export const generateFloorPlan = async (payload) => {
   try {
     const { formData } = payload;
+    // Structured fields — the backend builds prompts from these discrete values.
     const finalData = {
-      plotSize: `${formData.length} x ${formData.width}`,
-      floors: formData.floors,
-      extraInformation: `${formData.layoutStyle} , ${formData.rooms} , ${formData.notes || ''}`,
+      plotLength: Number(formData.length),
+      plotWidth: Number(formData.width),
+      floors: Number(formData.floors),
+      rooms: formData.rooms,
+      layoutStyle: formData.layoutStyle,
+      notes: formData.notes || '',
     };
     const response = await apiClient.post('/api/generate/floor-plan', finalData);
     return response.data;

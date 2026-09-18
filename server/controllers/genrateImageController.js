@@ -5,7 +5,7 @@ import path from "node:path";
 import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js";
 import GeneratedPlan from "../models/generatedPlanModel.js";
 import User from "../models/userModel.js"
-import { GEMINI_IMAGE_MODEL_2D, GEMINI_IMAGE_MODEL_3D } from "../config/aiModels.js";
+import { GEMINI_IMAGE_MODEL_2D, GEMINI_IMAGE_MODEL_3D, CREDIT_COST_2D, CREDIT_COST_3D } from "../config/aiModels.js";
 
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -169,9 +169,10 @@ const generate2DImage = async (userId, prompt) => {
 
 const generateFloorPlan = async (req, res) => {
 
-    const { plotSize, floors, extraInformation } = req.body
+    // Structured inputs (replaces the old squashed plotSize/extraInformation strings).
+    const { plotLength, plotWidth, floors, rooms, layoutStyle, notes } = req.body
 
-    if (!plotSize || !floors || !extraInformation) {
+    if (!plotLength || !plotWidth || !floors || !rooms || !layoutStyle) {
         res.status(409)
         throw new Error("Please fill all details...")
     }
@@ -183,16 +184,18 @@ const generateFloorPlan = async (req, res) => {
 
 
     // Check if sufficient credits exist
-    if (req.user.credits >= 2) {
+    if (req.user.credits >= CREDIT_COST_2D) {
 
-        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - 2 }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - CREDIT_COST_2D }, { new: true })
 
 
         const prompt = `Architectural 2D floor plan, top-down view, blueprint style.
-        Plot size: ${plotSize}
+        Plot size: ${plotLength} x ${plotWidth}
         Floors: ${floors}
-        Rooms: ${extraInformation}
-        Style: Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
+        Rooms: ${rooms}
+        Style: ${layoutStyle}
+        Additional requirements: ${notes || "none"}
+        Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
         Strictly flat 2D overhead plan. Professional blueprint aesthetic.`
 
         const floorPlan = await generate2DImage(userId, prompt).catch(async (geminiError) => {
@@ -203,7 +206,13 @@ const generateFloorPlan = async (req, res) => {
         // Create Floor Plan In DB
         const plan = new GeneratedPlan({
             user: userId,
-            floorPlan: floorPlan
+            floorPlan: floorPlan,
+            plotLength: Number(plotLength),
+            plotWidth: Number(plotWidth),
+            floors: Number(floors),
+            rooms,
+            layoutStyle,
+            notes: notes || ""
         })
 
         if (!floorPlan) {
@@ -253,9 +262,9 @@ const generateFinalPlan = async (req, res) => {
 
 
     // Check if sufficient credits exits
-    if (req.user.credits >= 3) {
+    if (req.user.credits >= CREDIT_COST_3D) {
 
-        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - 3 }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { credits: user.credits - CREDIT_COST_3D }, { new: true })
 
 
         const prompt = `Analyze this 2D floor plan and generate a photorealistic 3D exterior elevation image of this exact house. 
