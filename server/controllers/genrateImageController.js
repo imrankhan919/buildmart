@@ -16,6 +16,58 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 
+// ---- Pollinations fallback (free FluxCommunity, no key) ----
+// Used only when Gemini fails (429 quota / 5xx). Same contract as the Gemini
+// helpers: returns a Cloudinary secure_url string, throws on failure.
+// If POLLINATIONS_API_KEY (secret sk_ key, server-side only) is set, requests
+// go authenticated to the unified endpoint (no anonymous rate limits).
+// Otherwise the anonymous endpoint is used.
+const pollinationsConfig = () => {
+    const apiKey = process.env.POLLINATIONS_API_KEY;
+    if (apiKey) {
+        return {
+            base: "https://gen.pollinations.ai/image",
+            headers: { Authorization: `Bearer ${apiKey}` },
+        };
+    }
+    return { base: POLLINATIONS_BASE, headers: {} };
+};
+
+const downloadAndUpload = async (imageEndpointUrl, fileName) => {
+    const { headers } = pollinationsConfig();
+    const response = await fetch(imageEndpointUrl, { headers, signal: AbortSignal.timeout(180000) });
+    if (!response.ok) {
+        throw new Error(`Pollinations request failed: ${response.status}`);
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith("image/")) {
+        throw new Error("Pollinations did not return an image");
+    }
+    const ext = contentType.split("/")[1]?.split(";")[0] || "png";
+    const filePath = path.join(UPLOADS_DIR, `${fileName}.${ext}`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(filePath, buffer);
+    try {
+        const uploadResult = await uploadToCloudinary(filePath);
+        return uploadResult.secure_url;
+    } finally {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+};
+
+const generatePollinations2D = async (userId, prompt) => {
+    const { base } = pollinationsConfig();
+    const url = `${base}/${encodeURIComponent(prompt)}?model=flux&width=1024&height=1024`;
+    return downloadAndUpload(url, `poll2d_${Date.now()}_${userId}`);
+};
+
+const generatePollinations3D = async (sourceImageUrl, prompt) => {
+    const { base } = pollinationsConfig();
+    const url = `${base}/${encodeURIComponent(prompt)}?model=kontext&image=${encodeURIComponent(sourceImageUrl)}&width=1024&height=1024`;
+    return downloadAndUpload(url, `poll3d_${Date.now()}`);
+};
+
+
 
 const fetchImageAsBase64 = async (imageUrl) => {
     const response = await fetch(imageUrl);
@@ -142,7 +194,10 @@ const generateFloorPlan = async (req, res) => {
         Style: Clean architectural drawing, white background, black walls (thick lines), room labels in Arial font, dimensions marked on edges, doors shown as arcs, windows as parallel lines on walls. North arrow in top-right corner. Scale bar at bottom. Each room clearly labeled with name and size in square feet.
         Strictly flat 2D overhead plan. Professional blueprint aesthetic.`
 
-        const floorPlan = await generate2DImage(userId, prompt)
+        const floorPlan = await generate2DImage(userId, prompt).catch(async (geminiError) => {
+            console.error("Gemini 2D failed, trying Pollinations fallback:", geminiError?.message);
+            return generatePollinations2D(userId, prompt);
+        });
 
         // Create Floor Plan In DB
         const plan = new GeneratedPlan({
@@ -217,7 +272,13 @@ const generateFinalPlan = async (req, res) => {
     Render as:photorealistic architectural visualization, 3/4 perspective view, golden hour lighting, 8K ultra-detailed, sharp focus, lush surroundings, blue sky background, no people, hyper-realistic materials and textures --ar 16:9`
 
 
-        const finalPlan = await generate3dImage(plan?.floorPlan, prompt)
+        let finalPlan = await generate3dImage(plan?.floorPlan, prompt)
+
+        // generate3dImage resolves { error } instead of throwing on failure.
+        if (!finalPlan || finalPlan.error) {
+            console.error("Gemini 3D failed, trying Pollinations fallback:", finalPlan?.error);
+            finalPlan = await generatePollinations3D(plan?.floorPlan, prompt);
+        }
 
         if (!finalPlan) {
             res.status(409)
