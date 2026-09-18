@@ -6,7 +6,8 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast, getErrorMessage } from '../components/common/Toast.jsx';
 import { useMutation } from '@tanstack/react-query';
 import { generateFloorPlan, generateFinalPlan } from '../services/aiService';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { refreshUser } from '../features/auth/authSlice';
 
 function isCreditError(error) {
   return error?.status === 409 && /credit/i.test(error?.message || '');
@@ -14,7 +15,20 @@ function isCreditError(error) {
 
 export default function FloorPlanGenerator() {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const toast = useToast();
+
+  // NOTE: the backend deducts credits BEFORE calling Gemini, so credits drop
+  // even when generation itself fails (server-side ordering, not fixable from
+  // here). Mirror that locally so the displayed balance stays truthful: deduct
+  // on success and on 5xx failures, but not on 409/validation rejections where
+  // the backend never deducts.
+  const syncCredits = (error, cost) => {
+    if (!error || error.status === 409 || (error.status >= 400 && error.status < 500)) return;
+    if (typeof user?.credits === 'number') {
+      dispatch(refreshUser({ credits: Math.max(0, user.credits - cost) }));
+    }
+  };
 
   const plan2D = useMutation({ mutationFn: (formData) => generateFloorPlan({ formData }) });
   const render3D = useMutation({
@@ -48,8 +62,12 @@ export default function FloorPlanGenerator() {
     render3D.reset();
     setRenderInputs((prev) => ({ ...prev, numberOfFloors: Number(formData.floors) || 1 }));
     plan2D.mutate(formData, {
-      onSuccess: () => toast.success('2D blueprint generated (2 credits used).'),
+      onSuccess: () => {
+        if (typeof user?.credits === 'number') dispatch(refreshUser({ credits: Math.max(0, user.credits - 2) }));
+        toast.success('2D blueprint generated (2 credits used).');
+      },
       onError: (err) => {
+        syncCredits(err, 2);
         if (isCreditError(err)) toast.error('Not enough credits for a 2D plan. Request credits from your profile.');
         else toast.error(getErrorMessage(err, 'Failed to generate floor plan.'));
       },
@@ -67,8 +85,12 @@ export default function FloorPlanGenerator() {
         },
       },
       {
-        onSuccess: () => toast.success('3D render generated (3 credits used).'),
+        onSuccess: () => {
+          if (typeof user?.credits === 'number') dispatch(refreshUser({ credits: Math.max(0, user.credits - 3) }));
+          toast.success('3D render generated (3 credits used).');
+        },
         onError: (err) => {
+          syncCredits(err, 3);
           if (isCreditError(err)) toast.error('Not enough credits for a 3D render. Request credits from your profile.');
           else toast.error(getErrorMessage(err, 'Failed to generate 3D render.'));
         },
