@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { Compass, Sparkles, Building, Layers } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, Layers } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { useToast } from '../common/Toast.jsx';
 
 export default function PlotInputForm({ onGenerate }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     length: '',
     width: '',
@@ -27,7 +30,7 @@ export default function PlotInputForm({ onGenerate }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.length || !formData.width) {
-      alert('Please enter both Plot Length and Plot Width');
+      toast.error('Please enter both plot length and plot width.');
       return;
     }
     onGenerate(formData);
@@ -150,7 +153,8 @@ export default function PlotInputForm({ onGenerate }) {
       {/* Submit Action */}
       <button
         type="submit"
-        className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold py-3.5 px-4 rounded-xl text-sm transition-all duration-300 shadow-md shadow-amber-500/10 transform hover:-translate-y-0.5"
+        aria-label="Generate AI floor plan"
+        className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold py-3.5 px-4 rounded-xl text-sm transition-all duration-300 shadow-md shadow-amber-500/10 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
       >
         <Sparkles className="w-4 h-4 fill-slate-950/20" />
         <span>Generate AI Floor Plan</span>
@@ -158,3 +162,7 @@ export default function PlotInputForm({ onGenerate }) {
     </form>
   );
 }
+
+PlotInputForm.propTypes = {
+  onGenerate: PropTypes.func.isRequired,
+};

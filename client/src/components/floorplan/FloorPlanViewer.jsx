@@ -1,7 +1,14 @@
-import React from 'react';
-import { Compass, Maximize2, Move } from 'lucide-react';
+import { Compass } from 'lucide-react';
+import PropTypes from 'prop-types';
 
-export default function FloorPlanViewer({ length = 40, width = 30, rooms = '2 BHK', layoutStyle = 'Vastu', floors = 1 }) {
+export default function FloorPlanViewer({ length = 40, width = 30, rooms = '2 BHK', layoutStyle = 'Vastu', floors = 1, imageUrl }) {
+  if (imageUrl) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <img src={imageUrl} alt={`${rooms} ${layoutStyle} AI floor plan`} className="w-full rounded-xl object-contain" loading="lazy" />
+      </div>
+    );
+  }
   // Generate mock room layouts depending on the configuration
   const getRoomsForBHK = (type) => {
     const defaultRooms = [
@@ -106,7 +113,7 @@ export default function FloorPlanViewer({ length = 40, width = 30, rooms = '2 BH
       <div className="w-full grid grid-cols-3 gap-4 border-t border-blue-900 pt-5 mt-6 text-center text-xs relative z-10">
         <div>
           <span className="text-[10px] text-blue-500 block mb-0.5 uppercase">Built Area</span>
-          <span className="font-bold text-white">{(length * width * 0.9).toFixed(0)} sq ft</span>
+          <span className="font-bold text-white">{(Number(length) * Number(width) * 0.9).toFixed(0)} sq ft</span>
         </div>
         <div>
           <span className="text-[10px] text-blue-500 block mb-0.5 uppercase">Scale</span>
@@ -114,9 +121,18 @@ export default function FloorPlanViewer({ length = 40, width = 30, rooms = '2 BH
         </div>
         <div>
           <span className="text-[10px] text-blue-500 block mb-0.5 uppercase">Est. Cost</span>
-          <span className="font-bold text-amber-500">₹{(length * width * 1800).toLocaleString('en-IN')}</span>
+          <span className="font-bold text-amber-500">₹{(Number(length) * Number(width) * 1800).toLocaleString('en-IN')}</span>
         </div>
       </div>
     </div>
   );
 }
+
+FloorPlanViewer.propTypes = {
+  length: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  rooms: PropTypes.string,
+  layoutStyle: PropTypes.string,
+  floors: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  imageUrl: PropTypes.string,
+};

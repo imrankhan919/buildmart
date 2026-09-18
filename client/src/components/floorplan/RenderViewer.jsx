@@ -1,7 +1,14 @@
-import React from 'react';
-import { Eye, Download, Image as ImageIcon, Box } from 'lucide-react';
+import { Eye, Download, Box } from 'lucide-react';
+import PropTypes from 'prop-types';
 
-export default function RenderViewer({ layoutStyle = 'Modern', rooms = '2 BHK' }) {
+export default function RenderViewer({ layoutStyle = 'Modern', rooms = '2 BHK', imageUrl }) {
+  if (imageUrl) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md">
+        <img src={imageUrl} alt={`${rooms} ${layoutStyle} 3D render`} className="w-full rounded-xl object-contain" loading="lazy" />
+      </div>
+    );
+  }
   // Configured specifications based on layout style selection
   const getSpecsByStyle = (style) => {
     const defaultSpecs = {
@@ -79,14 +86,16 @@ export default function RenderViewer({ layoutStyle = 'Modern', rooms = '2 BHK' }
       <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-3">
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-semibold py-2 px-3 rounded-xl text-xs transition-colors"
+          aria-label="View interactive 3D"
+          className="flex items-center justify-center gap-1.5 border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-semibold py-2 px-3 rounded-xl text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
         >
           <Eye className="w-3.5 h-3.5" />
           <span>Interactive 3D</span>
         </button>
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold py-2 px-3 rounded-xl text-xs transition-colors"
+          aria-label="Download spec PDF"
+          className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold py-2 px-3 rounded-xl text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Get PDF Spec</span>
@@ -95,3 +104,9 @@ export default function RenderViewer({ layoutStyle = 'Modern', rooms = '2 BHK' }
     </div>
   );
 }
+
+RenderViewer.propTypes = {
+  layoutStyle: PropTypes.string,
+  rooms: PropTypes.string,
+  imageUrl: PropTypes.string,
+};
