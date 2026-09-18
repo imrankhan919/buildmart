@@ -1,17 +1,9 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, MapPin, Package, Award } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 export default function VendorCard({ vendor }) {
-  const {
-    _id,
-    name,
-    address,
-    rating,
-    totalProducts,
-    category,
-    image,
-  } = vendor;
+  const { _id, name, address, rating, totalProducts, category } = vendor;
 
   // Generate Initials
   const getInitials = (text) => {
@@ -87,3 +79,14 @@ export default function VendorCard({ vendor }) {
     </div>
   );
 }
+
+VendorCard.propTypes = {
+  vendor: PropTypes.shape({
+    _id: PropTypes.string,
+    name: PropTypes.string.isRequired,
+    address: PropTypes.string,
+    rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    totalProducts: PropTypes.number,
+    category: PropTypes.string,
+  }).isRequired,
+};
