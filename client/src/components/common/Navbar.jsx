@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Hammer, FileText, ShoppingBag, Users, LayoutDashboard, User, ShieldAlert, LogOut } from 'lucide-react';
+import { Menu, X, Hammer, FileText, ShoppingBag, Users, LogOut, Coins } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../../features/auth/authSlice';
+import { useToast } from './Toast.jsx';
 
 export default function Navbar() {
 
@@ -10,6 +11,7 @@ export default function Navbar() {
 
   const dispatch = useDispatch()
   const navigate = useNavigate();
+  const toast = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Styling helper for NavLinks
@@ -29,6 +31,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     dispatch(logoutUser())
+    toast.info('Signed out.');
     navigate("/login")
   };
 
@@ -95,19 +98,26 @@ export default function Navbar() {
               ) : (
                 <>
                   <div className="flex items-center gap-3">
+                    {typeof user?.credits === 'number' && (
+                      <span className="hidden lg:inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-lg">
+                        <Coins className="w-3.5 h-3.5" />
+                        {user.credits} credits
+                      </span>
+                    )}
                     <Link
                       to="/profile"
-                      className="flex items-center gap-2 hover:opacity-90 transition-opacity bg-slate-800 border border-slate-700/50 px-3 py-1.5 rounded-xl shadow-sm"
+                      className="flex items-center gap-2 hover:opacity-90 transition-opacity bg-slate-800 border border-slate-700/50 px-3 py-1.5 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                       title="My Profile"
                     >
-                      <div className="w-6.5 h-6.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">
-                        {user?.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                      <div className="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">
+                        {user?.name?.split(' ').map((n) => n[0]).join('').toUpperCase()}
                       </div>
                       <span className="text-slate-200 text-xs font-bold max-w-[90px] truncate">{user?.name}</span>
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                      aria-label="Log out"
+                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
                       title="Logout"
                     >
                       <LogOut className="w-4 h-4" />
@@ -127,7 +137,9 @@ export default function Navbar() {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              className="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               {isMobileMenuOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
             </button>
