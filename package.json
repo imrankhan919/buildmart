@@ -18,7 +18,9 @@
     "server": "node --watch server/server.js",
     "client": "cd client && npm run dev",
     "build": "npm  install && cd client && npm install",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "seed:users": "node seed/users.js",
+    "seed:products": "node server/seed/products.js"
   },
   "dependencies": {
     "@google/genai": "^2.6.0",
