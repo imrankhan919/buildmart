@@ -5,6 +5,7 @@ import path from "node:path";
 import uploadToCloudinary from "../middleware/cloudinaryMiddleware.js";
 import GeneratedPlan from "../models/generatedPlanModel.js";
 import User from "../models/userModel.js"
+import { GEMINI_IMAGE_MODEL_2D, GEMINI_IMAGE_MODEL_3D } from "../config/aiModels.js";
 
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -85,7 +86,7 @@ const generate3dImage = async (imageURL, prompt) => {
     try {
         const { mimeType, base64 } = await fetchImageAsBase64(imageURL);
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image", // ✅ Fixed model name
+            model: GEMINI_IMAGE_MODEL_3D, // ✅ Fixed model name
             contents: [
                 {
                     parts: [
@@ -134,7 +135,7 @@ const generate2DImage = async (userId, prompt) => {
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-3.1-flash-image-preview",
+            model: GEMINI_IMAGE_MODEL_2D,
             contents: prompt,
         });
         for (const part of response.candidates[0].content.parts) {
